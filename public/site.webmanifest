@@ -1,0 +1,10 @@
+{
+  "name":"RK Cashew Panruti",
+  "short_name":"RK Cashew",
+  "start_url":"/",
+  "display":"standalone",
+  "background_color":"#071126",
+  "theme_color":"#071126",
+  "description":"RK Cashew Panruti cashew retail and bulk enquiries across India.",
+  "icons":[{"src":"/apple-touch-icon.png","sizes":"180x180","type":"image/png"}]
+}

@@ -1,0 +1,48 @@
+/* RK Cashew - Futuristic classy theme. Safe overlay: no layout changes. */
+:root{--rk-gold:#e8a317;--rk-gold2:#f6c453;--rk-glow:rgba(232,163,23,.35);--rk-ease:cubic-bezier(.22,.8,.24,1)}
+html{scroll-behavior:smooth}
+body{-webkit-tap-highlight-color:transparent}
+/* animated aurora background */
+body::before{content:"";position:fixed;inset:-25%;z-index:-1;pointer-events:none;background:radial-gradient(38% 38% at 18% 22%,rgba(232,163,23,.30),transparent 70%),radial-gradient(34% 34% at 82% 28%,rgba(0,190,220,.22),transparent 70%),radial-gradient(40% 40% at 55% 88%,rgba(150,70,230,.22),transparent 70%);animation:rkFloat 26s ease-in-out infinite alternate;transition:background 1.2s}
+@keyframes rkFloat{to{transform:translate3d(4%,-3%,0) scale(1.1) rotate(2deg)}}
+/* header: frosted, floating */
+.nav{-webkit-backdrop-filter:blur(18px) saturate(160%);backdrop-filter:blur(18px) saturate(160%);border-bottom:1px solid rgba(255,255,255,.28)}
+/* cards: glass + gold edge shimmer + tilt-lift */
+.card,.modalCard{-webkit-backdrop-filter:blur(16px) saturate(150%);backdrop-filter:blur(16px) saturate(150%);border:1px solid rgba(255,255,255,.4);border-radius:22px;position:relative;transition:transform .35s var(--rk-ease),box-shadow .35s}
+.card::after{content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;pointer-events:none;background:linear-gradient(120deg,transparent 30%,var(--rk-gold2),transparent 70%) 0 0/250% 100%;-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;opacity:0;transition:opacity .3s}
+.card:hover,.card:active{transform:translateY(-8px) scale(1.012);box-shadow:0 22px 50px var(--rk-glow)}
+.card:hover::after,.card:active::after{opacity:1;animation:rkEdge 1.6s linear infinite}
+@keyframes rkEdge{to{background-position:-250% 0}}
+.gradePhoto{transition:transform .8s var(--rk-ease)}.card:hover .gradePhoto{transform:scale(1.07)}
+/* buttons: glow, press, ripple */
+.btn,button.gold{position:relative;overflow:hidden;transition:transform .18s var(--rk-ease),box-shadow .25s,filter .25s}
+.btn.gold,button.gold{background:linear-gradient(135deg,var(--rk-gold2),var(--rk-gold) 55%,#d4790e);box-shadow:0 6px 22px var(--rk-glow)}
+.btn:hover{transform:translateY(-2px);filter:brightness(1.06)}.btn:active{transform:scale(.96)}
+.btn.gold::before{content:"";position:absolute;top:0;left:-70%;width:45%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.55),transparent);transform:skewX(-20deg);animation:rkShine 4.5s ease-in-out infinite}
+@keyframes rkShine{0%,60%{left:-70%}100%{left:140%}}
+.rk-rip{position:absolute;border-radius:50%;background:rgba(255,255,255,.55);transform:scale(0);animation:rkRip .6s ease-out forwards;pointer-events:none}
+@keyframes rkRip{to{transform:scale(4);opacity:0}}
+.qty button{transition:transform .15s,background .2s}.qty button:active{transform:scale(.85)}
+/* scroll reveal + inputs */
+.reveal{transition:opacity .8s var(--rk-ease),transform .8s var(--rk-ease)}
+input:focus,textarea:focus,select:focus{outline:none;box-shadow:0 0 0 3px var(--rk-glow);border-color:var(--rk-gold)}
+.price{text-shadow:0 0 18px var(--rk-glow)}
+::selection{background:var(--rk-gold);color:#111}
+::-webkit-scrollbar{width:9px}::-webkit-scrollbar-thumb{background:linear-gradient(var(--rk-gold2),var(--rk-gold));border-radius:9px}
+/* ---- 10 days before: classy countdown banner ---- */
+body.fest .festival{background:linear-gradient(100deg,var(--f1),var(--f2),var(--f1))!important;background-size:200% 100%!important;animation:rkBar 8s linear infinite;box-shadow:0 6px 24px rgba(0,0,0,.25)}
+@keyframes rkBar{to{background-position:-200% 0}}
+#festCountdown{display:inline-block;padding:3px 12px;border-radius:99px;background:rgba(255,255,255,.22);backdrop-filter:blur(6px);font-weight:800}
+/* ---- FESTIVAL DAY: whole page changes mood ---- */
+body.festday{--rk-gold:var(--f2);--rk-gold2:color-mix(in srgb,var(--f2) 65%,#fff);--rk-glow:color-mix(in srgb,var(--f2) 42%,transparent);background-image:linear-gradient(180deg,color-mix(in srgb,var(--f1) 14%,transparent),transparent 45%)}
+body.festday::before{background:radial-gradient(42% 42% at 20% 20%,color-mix(in srgb,var(--f2) 45%,transparent),transparent 70%),radial-gradient(38% 38% at 80% 30%,color-mix(in srgb,var(--f1) 45%,transparent),transparent 70%),radial-gradient(42% 42% at 50% 88%,color-mix(in srgb,var(--f2) 30%,transparent),transparent 70%);animation-duration:14s}
+body.festday .nav{background:linear-gradient(90deg,color-mix(in srgb,var(--f1) 88%,#000),color-mix(in srgb,var(--f2) 55%,#000))!important;border-bottom:1px solid var(--f2)}
+body.festday .hero{box-shadow:inset 0 0 0 9999px color-mix(in srgb,var(--f1) 32%,transparent)}
+body.festday h1,body.festday h2{background:linear-gradient(100deg,var(--f2),#fff 45%,var(--f2));background-size:200% auto;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:rkText 6s linear infinite}
+@keyframes rkText{to{background-position:200% center}}
+body.festday .card{border-color:color-mix(in srgb,var(--f2) 60%,transparent);box-shadow:0 10px 34px var(--rk-glow)}
+body.festday .card::after{opacity:.9;animation:rkEdge 3s linear infinite}
+body.festday .kicker{color:var(--f2)}
+body.festday::after{content:"";position:fixed;inset:0;z-index:1;pointer-events:none;background-image:radial-gradient(2px 2px at 20% 30%,#fff,transparent),radial-gradient(2px 2px at 70% 20%,var(--f2),transparent),radial-gradient(1.5px 1.5px at 40% 75%,#fff,transparent),radial-gradient(2px 2px at 85% 65%,var(--f2),transparent),radial-gradient(1.5px 1.5px at 10% 85%,#fff,transparent);background-size:340px 340px;animation:rkTwinkle 3.2s ease-in-out infinite alternate;opacity:.7}
+@keyframes rkTwinkle{to{opacity:.15;transform:translateY(-14px)}}
+@media(prefers-reduced-motion:reduce){body::before,body.festday::after,.btn.gold::before,.card::after,body.fest .festival,body.festday h1,body.festday h2{animation:none!important}.card,.btn,.reveal{transition:none}}

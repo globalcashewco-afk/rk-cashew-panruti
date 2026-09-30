@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en-IN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Track your order | RK Cashew Panruti</title><meta name="description" content="Track your RK Cashew Panruti order with order ID and mobile number.">
+<link rel="canonical" href="https://rk-cashew-panruti.globalcashewco.workers.dev/track-order/"><link rel="stylesheet" href="/glass.css">
+<style>body{margin:0;min-height:100vh;display:grid;place-items:center;font-family:system-ui,sans-serif;background:linear-gradient(135deg,#071126,#3b1d6e);color:#fff;padding:16px}
+.c{width:min(420px,100%);padding:22px;border-radius:22px;background:rgba(255,255,255,.12);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.3)}
+input,button{width:100%;box-sizing:border-box;margin:6px 0;padding:12px;border-radius:12px;border:1px solid rgba(255,255,255,.3);font:inherit}
+input{background:rgba(255,255,255,.9);color:#111}button{background:#e8a317;border:0;font-weight:700;cursor:pointer}#r{margin-top:10px;font-size:1.05rem}a{color:#f2c46b}</style></head>
+<body><div class="c"><h1 style="margin:0 0 8px">Track order</h1>
+<input id="i" placeholder="Order ID (e.g. RK260930…)" autocomplete="off"><input id="p" placeholder="Mobile number" inputmode="numeric" maxlength="10">
+<button id="b">Check status</button><div id="r"></div><p><a href="/">← Back to shop</a></p></div>
+<script>
+document.getElementById("b").onclick=function(){var r=document.getElementById("r"),i=document.getElementById("i").value.trim(),p=document.getElementById("p").value.replace(/\D/g,"");
+if(!i||p.length!==10){r.textContent="Enter order ID and 10-digit mobile.";return}
+fetch("/api/track?id="+encodeURIComponent(i)+"&phone="+p).then(function(x){return x.json().then(function(d){return[x.ok,d]})}).then(function(a){
+r.textContent=a[0]?"Status: "+a[1].status+(a[1].track?" · Tracking: "+a[1].track:""):"Order not found. Check ID and mobile."}).catch(function(){r.textContent="Server not reachable."})};
+</script></body></html>

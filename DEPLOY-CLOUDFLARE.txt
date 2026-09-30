@@ -1,0 +1,27 @@
+RK CASHEW PANRUTI - DEPLOY
+A) Laptop:  npm i -g wrangler (4.45+) -> npx wrangler login -> npx wrangler secret put ADMIN_USER / ADMIN_PASS / SESSION_SECRET -> npx wrangler deploy
+B) GitHub (iPad): upload these files at repo top level, connect repo in Cloudflare Workers (Settings > Builds), add the 3 secrets, redeploy.
+   If KV build error: create a KV namespace, add "id":"<its id>" inside kv_namespaces in wrangler.jsonc.
+Test: /api/prices -> {"prices":{},"updated":0}; Admin login; place a test order; /track-order/ ; Search Console HTML-file verify + submit sitemap.xml.
+After deploy: Admin > Store tab -> enter business name, address, phone, FSSAI and your full 15-character GSTIN (must be saved before any order can be marked Paid / invoiced).
+
+OPTIONAL SECRETS (npx wrangler secret put NAME):
+ ADMIN_TOTP  = base32 secret from an authenticator app (Google/Microsoft Authenticator "enter setup key") -> admin login then needs the 6-digit code
+ TG_TOKEN + TG_CHAT = Telegram bot token + your chat id -> instant new-order alert on your phone
+ WA_TOKEN + WA_PHONE_ID (+ WA_TEMPLATE, default "order_update") = WhatsApp Business Cloud API -> auto message to customers.
+   Template text to approve in Meta (category Utility, language English): Hello {{1}}, your RK Cashew order {{2}} status: {{3}}. Thank you!
+Admin > Store tab: coupons (one per line: RK10 pct 10 2026-12-31 / OFF50 flat 50) and free-delivery amount.
+
+RAZORPAY (automatic payment verification) - already built, needs only your keys
+ 1. Create a Razorpay account, finish KYC (PAN, bank, GSTIN, website with Privacy/Terms/Refund/Shipping pages - all included). Use TEST mode until approved.
+ 2. Dashboard > Settings > Payment Capture: set to AUTOMATIC (otherwise payments stay "authorised" and money is not captured).
+ 3. Dashboard > Account & Settings > API Keys: generate keys. Then run:
+      npx wrangler secret put RZP_KEY_ID          (starts with rzp_test_ or rzp_live_)
+      npx wrangler secret put RZP_KEY_SECRET
+ 4. Dashboard > Webhooks > Add: URL  https://YOUR-SITE/api/pay/webhook  ; events: payment.captured and order.paid ; type any secret, then:
+      npx wrangler secret put RZP_WEBHOOK_SECRET   (same secret)
+ 5. IMPORTANT: in Admin, save your prices once (Prices tab > save) so the server holds the price list. Online payment is refused until it does, so nobody can tamper with the amount.
+ 6. Test in test mode: order -> "Pay securely" -> Razorpay test UPI/card -> order shows Paid with an invoice number. Then swap to live keys (repeat step 3 with live keys and re-create the webhook in live mode).
+ The manual UPI QR + UTR path stays as backup. Cashfree is not included.
+
+SELF-TEST (no Cloudflare needed): node test-worker.mjs   -> should print "46 passed, 0 failed"

@@ -1,0 +1,38 @@
+RK CASHEW PANRUTI - DEPLOY: GITHUB -> CLOUDFLARE -> SEARCH CONSOLE
+
+STEP 1 GITHUB
+1. github.com > New repository > name rk-cashew-panruti > Create (no README).
+2. Put these at the TOP LEVEL of the repo: worker.js, wrangler.jsonc, .gitignore, and the folder "public" (the whole website lives inside public).
+   No hidden file (.assetsignore) is needed any more - only the public folder is published, so worker.js is never exposed.
+3. Check: repo shows worker.js, wrangler.jsonc, public/ (with index.html, images/, _headers inside public).
+
+STEP 2 CLOUDFLARE
+1. dash.cloudflare.com > Workers & Pages. Open the existing worker rk-cashew-panruti > Settings > Builds > Connect (choose GitHub, the repo, branch main).
+   (New worker instead: Create > Workers > Import a repository. The name must match "name" in wrangler.jsonc: rk-cashew-panruti.)
+2. Build command: leave empty.  Deploy command: npx wrangler deploy.  Save. It builds and deploys.
+3. Settings > Variables and Secrets > Add (type Secret): ADMIN_USER, ADMIN_PASS (new strong password), SESSION_SECRET (long random text).
+   Optional: ADMIN_TOTP, TG_TOKEN, TG_CHAT, WA_TOKEN, WA_PHONE_ID (see DEPLOY-CLOUDFLARE.txt).
+4. Deployments > Retry / push any small commit so the secrets are used.
+5. If the build says the KV namespace is missing: Storage & Databases > KV > Create namespace, copy its ID, edit wrangler.jsonc in GitHub:
+   "kv_namespaces": [ { "binding": "KV", "id": "PASTE-ID-HERE" } ]  then commit.
+6. Every future change: edit the file in GitHub > Commit. Cloudflare redeploys automatically.
+
+STEP 3 RAZORPAY (online payment)
+1. razorpay.com > sign up > Settings > API Keys > Generate TEST key. Add secrets RZP_KEY_ID and RZP_KEY_SECRET.
+2. Settings > Webhooks > Add: URL https://rk-cashew-panruti.globalcashewco.workers.dev/api/pay/webhook, events payment.captured and order.paid, set a secret text -> add it as Cloudflare secret RZP_WEBHOOK_SECRET.
+3. Test with Razorpay test UPI/card. When KYC is approved, replace the keys with LIVE keys and redeploy.
+
+STEP 4 FIRST-TIME SETUP ON THE SITE
+Admin > login > Store tab: business name, address, phone, FSSAI, full 15-character GSTIN, HSN, free-delivery amount, coupons > Save.
+Prices tab: check prices and stock.
+
+STEP 5 TEST (before customers)
+/api/prices shows JSON. Place a test order (coupon + screenshot). Pay with Razorpay test mode -> order becomes Paid automatically. Open invoice. Check /track-order/.
+
+STEP 6 GOOGLE SEARCH CONSOLE
+1. search.google.com/search-console > Add property > URL prefix > https://rk-cashew-panruti.globalcashewco.workers.dev/
+2. Choose the HTML file method. Open https://rk-cashew-panruti.globalcashewco.workers.dev/google6cea2babc08bf47b.html (or the google7de4791e693f3079.html file for that token) - it must show text. Press Verify.
+   (DNS TXT does not work on workers.dev; use it only after you connect your own domain.)
+3. Sitemaps > enter sitemap.xml > Submit. Status should become Success.
+4. URL inspection > paste the home page URL > Request indexing.
+5. Google Business Profile (free): add your shop, phone and website link.
