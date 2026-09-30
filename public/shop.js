@@ -239,7 +239,22 @@ function syncPrices(){
     if(ch){try{localStorage.setItem("rkCashewData",JSON.stringify(data))}catch(e){}renderProducts();updateCartUI()}
   }).catch(function(){});
 }
-syncPrices();setInterval(syncPrices,60000);
+function syncPublicSettings(){
+  fetch("/api/settings",{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(S){
+    if(!S)return;
+    if(S.wa)CFG.wa=String(S.wa).replace(/\D/g,"");
+    if(S.phone)CFG.phone=String(S.phone);
+    if(S.upi)CFG.upi=String(S.upi);
+    if(S.upiName)CFG.upiName=String(S.upiName);
+    if(S.phone)data.phone=S.phone;
+    if(S.wa)data.wa=String(S.wa).replace(/\D/g,"");
+    if(S.tagline)data.tagline=S.tagline;
+    try{localStorage.setItem("rkCashewData",JSON.stringify(data))}catch(e){}
+    if(window.syncContactLinks)window.syncContactLinks();
+  }).catch(function(){});
+}
+syncPrices();syncPublicSettings();setInterval(syncPrices,60000);
+
 var seen=null,timer=null,cur=[];
 function beep(){try{var a=new (window.AudioContext||window.webkitAudioContext)(),o=a.createOscillator();o.connect(a.destination);o.frequency.value=880;o.start();setTimeout(function(){o.stop()},250)}catch(e){}}
 function draw(list){
@@ -279,9 +294,9 @@ function invoice(o){
     var wd=window.open("","_blank");if(!wd)return toast("Allow pop-ups to view the invoice");wd.document.write(h);wd.document.close();
   }).catch(function(){toast("Could not load store details")});
 }
-window.rkLoadSettings=function(){fetch("/api/settings").then(function(r){return r.json()}).then(function(S){[["stBiz","biz"],["stPhone","phone"],["stAddr","addr"],["stGstin","gstin"],["stFssai","fssai"],["stHsn","hsn"],["stFree","freeAbove"],["stCoup","coupons"]].forEach(function(a){var e=document.getElementById(a[0]);if(e&&S[a[1]])e.value=S[a[1]]})}).catch(function(){})};
+window.rkLoadSettings=function(){fetch("/api/settings").then(function(r){return r.json()}).then(function(S){[["stBiz","biz"],["stPhone","phone"],["stAddr","addr"],["stGstin","gstin"],["stFssai","fssai"],["stHsn","hsn"],["stFree","freeAbove"],["stCoup","coupons"],["stUpi","upi"],["stUpiName","upiName"]].forEach(function(a){var e=document.getElementById(a[0]);if(e&&S[a[1]]!=null)e.value=S[a[1]]})}).catch(function(){})};
 window.rkSaveSettings=function(){var g=function(i){return document.getElementById(i).value.trim()},m=document.getElementById("stMsg");
-  fetch("/api/settings",{method:"PUT",headers:{"content-type":"application/json"},body:JSON.stringify({biz:g("stBiz"),phone:g("stPhone"),addr:g("stAddr"),gstin:g("stGstin"),fssai:g("stFssai"),hsn:g("stHsn"),freeAbove:g("stFree"),coupons:g("stCoup")})}).then(function(r){return r.json()}).then(function(d){m.textContent=d.error||"Saved ✔"}).catch(function(){m.textContent="Server not reachable"})};
+  fetch("/api/settings",{method:"PUT",headers:{"content-type":"application/json"},body:JSON.stringify({biz:g("stBiz"),phone:g("stPhone"),addr:g("stAddr"),gstin:g("stGstin"),fssai:g("stFssai"),hsn:g("stHsn"),freeAbove:g("stFree"),coupons:g("stCoup"),upi:g("stUpi"),upiName:g("stUpiName")})}).then(function(r){return r.json()}).then(function(d){m.textContent=d.error||"Saved ✔"}).catch(function(){m.textContent="Server not reachable"})};
 window.rkLoadOrders=function(){load();clearInterval(timer);timer=setInterval(function(){if(sessionStorage.getItem("rkAdmin")==="1")load()},15000)};
 })();
 

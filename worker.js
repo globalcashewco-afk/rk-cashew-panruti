@@ -158,9 +158,12 @@ export default {
         await env.KV.put("prices",JSON.stringify({prices:out,stock:st,updated:Date.now()}));return J({ok:1});
       }
       if(p==="/api/settings"&&req.method==="PUT"){
-        const b=await body(req),g=clean(b.gstin,15).toUpperCase();
+        const b=await body(req),old=JSON.parse(await env.KV.get("settings")||"{}"),g=b.gstin!=null?clean(b.gstin,15).toUpperCase():String(old.gstin||"");
         if(g&&!gstOk(g))return J({error:"GSTIN is not valid (15 characters, e.g. 33ABCDE1234F1Z5). Please check it."},400);
-        await env.KV.put("settings",JSON.stringify({freeAbove:Math.max(0,+b.freeAbove||0),coupons:String(b.coupons||"").replace(/\r/g,"").replace(/;/g,"\n").split("\n").map(x=>clean(x,80)).filter(Boolean).slice(0,50).join("\n"),biz:clean(b.biz,80),addr:clean(b.addr,200),phone:clean(b.phone,20),fssai:clean(b.fssai,20),gstin:g,hsn:clean(b.hsn,8)||"0801"}));return J({ok:1});
+        const val=(key,max,fallback="")=>b[key]!=null?clean(b[key],max):String(old[key]||fallback);
+        const coupons=b.coupons!=null?String(b.coupons||"").replace(/\r/g,"").replace(/;/g,"\n").split("\n").map(x=>clean(x,80)).filter(Boolean).slice(0,50).join("\n"):String(old.coupons||"");
+        const freeAbove=b.freeAbove!=null?Math.max(0,+b.freeAbove||0):Math.max(0,+old.freeAbove||0);
+        await env.KV.put("settings",JSON.stringify({freeAbove,coupons,biz:val("biz",80),addr:val("addr",200),phone:val("phone",20),wa:val("wa",20),tagline:val("tagline",160),fssai:val("fssai",20),gstin:g,hsn:val("hsn",8,"0801")||"0801",upi:val("upi",120),upiName:val("upiName",80)}));return J({ok:1});
       }
       return J({error:"Not found"},404);
     }catch(e){return J({error:"Bad request"},400)}

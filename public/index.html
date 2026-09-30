@@ -20,11 +20,14 @@
 <meta property="og:title" content="RK Cashew Panruti | Cashew Supplier & Wholesale Orders">
 <meta property="og:description" content="W210, W240, W320, W400 and broken cashew grades from RK Cashew Panruti. Retail and bulk enquiries across India.">
 <meta property="og:url" content="https://rk-cashew-panruti.globalcashewco.workers.dev/">
-<meta property="og:image" content="https://rk-cashew-panruti.globalcashewco.workers.dev/images/grade-w240.jpg">
+<meta property="og:image" content="https://rk-cashew-panruti.globalcashewco.workers.dev/og-rk-cashew.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="RK Cashew Panruti">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="RK Cashew Panruti | Cashew Supplier & Wholesale Orders">
 <meta name="twitter:description" content="Shop and enquire about cashew grades W210, W240, W320, W400, SWP, SP, JB and JH from Panruti.">
-<meta name="twitter:image" content="https://rk-cashew-panruti.globalcashewco.workers.dev/images/grade-w240.jpg">
+<meta name="twitter:image" content="https://rk-cashew-panruti.globalcashewco.workers.dev/og-rk-cashew.jpg">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="manifest" href="/site.webmanifest">
@@ -483,7 +486,7 @@ img{max-width:100%}
   </div>
 </footer>
 
-<div class="bottom"><div class="bottomIn"><div class="cartText"><b id="cartTotal">₹0</b><span id="cartCount">0 items · Add products to order</span></div><button class="btn gold" onclick="openCart()">View order →</button></div></div>
+<div class="bottom"><div class="bottomIn"><div class="cartText"><b id="cartTotal">₹0</b><span id="cartCount">0 items · Add products to order</span></div><button class="btn" style="background:#eef1f6;color:#071126" onclick="clearOrder()">Clear</button><button class="btn gold" onclick="openCart()">View order →</button></div></div>
 
 <div id="cartModal" class="modal" onclick="if(event.target===this)closeModal('cartModal')">
  <div class="modalCard">
@@ -514,7 +517,7 @@ img{max-width:100%}
     <button class="active" onclick="adminTab('prices',this)">Prices</button>
     <button onclick="adminTab('festival',this)">Festival</button>
     <button onclick="adminTab('orders',this);window.rkLoadOrders&&rkLoadOrders()">Orders</button>
-    <button onclick="adminTab('store',this);window.rkLoadSettings&&rkLoadSettings()">Store</button>
+    <button onclick="adminTab('store',this);window.rkLoadSettings&&window.rkLoadSettings()">Store</button>
     <button onclick="adminTab('site',this)">Site</button>
    </div>
    <div id="admin-prices" class="adminSection active"><div id="adminProducts" class="adminGrid"></div></div>
@@ -534,7 +537,7 @@ img{max-width:100%}
     <div><label>Business name</label><input id="stBiz"></div><div><label>Phone</label><input id="stPhone"></div>
     <div class="full"><label>Address</label><input id="stAddr"></div>
     <div><label>GSTIN (15 characters)</label><input id="stGstin" maxlength="15"></div><div><label>FSSAI number</label><input id="stFssai"></div>
-    <div><label>HSN code</label><input id="stHsn" value="0801"></div><div><label>Free delivery above (₹, 0 = off)</label><input id="stFree" inputmode="numeric"></div><div class="full"><label>Coupons (one per line: CODE pct 10 2026-12-31  or  CODE flat 50)</label><textarea id="stCoup" rows="3"></textarea></div></div>
+    <div><label>HSN code</label><input id="stHsn" value="0801"></div><div><label>UPI ID</label><input id="stUpi" value="ravichandranjeevitha300-1@oksbi"></div><div><label>UPI name</label><input id="stUpiName" value="Jeevitha Ravichandran"></div><div><label>Free delivery above (₹, 0 = off)</label><input id="stFree" inputmode="numeric"></div><div class="full"><label>Coupons (one per line: CODE pct 10 2026-12-31  or  CODE flat 50)</label><textarea id="stCoup" rows="3"></textarea></div></div>
     <button class="btn gold" style="margin-top:12px;width:100%" onclick="rkSaveSettings()">Save store details</button><p id="stMsg" style="font-size:12px"></p></div>
    <div id="admin-site" class="adminSection">
     <div class="formgrid">
@@ -593,7 +596,8 @@ const FESTIVALS_2026=[
  ["Christmas","2026-12-25"]
 ];
 let data=JSON.parse(localStorage.getItem("rkCashewData")||"null")||structuredClone(DEFAULTS);
-let cart=JSON.parse(localStorage.getItem("rkCashewCart")||"{}");
+const CART_KEY="rkCashewCartV2";
+let cart=JSON.parse(localStorage.getItem(CART_KEY)||"{}");
 
 function money(n){return "₹"+Number(n).toLocaleString("en-IN")}
 function save(){localStorage.setItem("rkCashewData",JSON.stringify(data));if(sessionStorage.getItem("rkAdmin")==="1"){const pr={},sk={};data.products.forEach(p=>{pr[p.id]=p.price;sk[p.id]=!!p.stock});fetch("/api/prices",{method:"PUT",headers:{"content-type":"application/json"},body:JSON.stringify({prices:pr,stock:sk})}).catch(()=>{})}}
@@ -620,11 +624,12 @@ function changeQty(id,delta){
  const now=Number(cart[id]||0)+delta;
  cart[id]=Math.max(0,Math.round(now*10)/10);
  if(cart[id]===0)delete cart[id];
- localStorage.setItem("rkCashewCart",JSON.stringify(cart));
+ localStorage.setItem(CART_KEY,JSON.stringify(cart));
  const el=document.getElementById("q-"+id);if(el)el.textContent=(cart[id]||0)+" kg";
  updateCartUI();
 }
-function addProduct(id){changeQty(id,0.5);toast(id+" added to order")}
+function addProduct(id){var p=data.products.find(function(x){return x.id===id});if(!p||!p.stock)return toast(id+" is unavailable");changeQty(id,0.5);toast(id+" added to order")}
+function clearOrder(){cart={};localStorage.setItem(CART_KEY,"{}");renderProducts();toast("Order cleared")}
 function gstAmount(subtotal){return Math.round(subtotal*0.05*100)/100}
 function updateCartUI(){
  let subtotal=0,count=0;
@@ -708,23 +713,41 @@ async function adminLogin(){
 }
 function showAdmin(){
  if(sessionStorage.getItem("rkAdmin")!=="1")return;
- document.getElementById("adminLogin").style.display="none";document.getElementById("adminPanel").style.display="block";renderAdmin();
+ document.getElementById("adminLogin").style.display="none";document.getElementById("adminPanel").style.display="block";loadAdminPrices();window.rkLoadSettings&&window.rkLoadSettings();
 }
 function renderAdmin(){
- document.getElementById("adminProducts").innerHTML=data.products.map((p,i)=>`
+ document.getElementById("adminProducts").innerHTML=data.products.map(function(p,i){return `
  <div class="adminProduct"><h4>${p.id}</h4><div class="formgrid">
- <div><label>Price / kg</label><input id="ap-${i}" type="number" value="${p.price}"></div>
+ <div><label>Price / kg</label><input id="ap-${i}" type="number" min="1" value="${p.price}"></div>
  <div><label>Stock</label><select id="as-${i}"><option value="true" ${p.stock?"selected":""}>Available</option><option value="false" ${!p.stock?"selected":""}>Unavailable</option></select></div>
  <div class="full"><label>Description</label><input id="ad-${i}" value="${p.desc}"></div></div>
- <button class="btn" style="margin-top:8px;background:#0b1837;color:#fff;width:100%" onclick="saveProduct(${i})">Save ${p.id}</button></div>`).join("");
+ <button class="btn" style="margin-top:8px;background:#0b1837;color:#fff;width:100%" onclick="saveProduct(${i})">Save ${p.id}</button></div>`}).join("");
  document.getElementById("fName").value=data.festival.name;document.getElementById("fDate").value=data.festival.date;document.getElementById("fEnd").value=data.festival.end;document.getElementById("fCopy").value=data.festival.copy;document.getElementById("fBefore").value=data.festival.before;
  document.getElementById("sWa").value=data.wa;document.getElementById("sPhone").value=data.phone;document.getElementById("sTag").value=data.tagline;
 }
+function loadAdminPrices(){
+ fetch("/api/prices",{cache:"no-store"}).then(function(r){return r.ok?r.json():null}).then(function(d){
+   if(d&&d.prices){data.products.forEach(function(p){if(Number(d.prices[p.id])>0)p.price=Number(d.prices[p.id]);if(d.stock&&typeof d.stock[p.id]==="boolean")p.stock=d.stock[p.id]})}
+   try{localStorage.setItem("rkCashewData",JSON.stringify(data))}catch(e){}
+   renderAdmin();
+ }).catch(function(){renderAdmin()});
+}
 function saveProduct(i){
- const p=data.products[i];p.price=Number(document.getElementById("ap-"+i).value)||0;p.stock=document.getElementById("as-"+i).value==="true";p.desc=document.getElementById("ad-"+i).value.trim();save();renderProducts();renderAdmin();toast(p.id+" updated");
+ const p=data.products[i],price=Number(document.getElementById("ap-"+i).value),stock=document.getElementById("as-"+i).value==="true",desc=document.getElementById("ad-"+i).value.trim();
+ if(!(price>0))return toast("Enter a valid price for "+p.id);
+ const prices={},stocks={};data.products.forEach(function(x,j){prices[x.id]=j===i?price:x.price;stocks[x.id]=j===i?stock:!!x.stock});
+ fetch("/api/prices",{method:"PUT",headers:{"content-type":"application/json"},body:JSON.stringify({prices:prices,stock:stocks})}).then(function(r){return r.json()}).then(function(d){
+   if(d&&d.error)return toast(d.error);p.price=price;p.stock=stock;p.desc=desc;try{localStorage.setItem("rkCashewData",JSON.stringify(data))}catch(e){}renderProducts();renderAdmin();toast(p.id+" saved");
+ }).catch(function(){toast("Could not save price. Check connection.")});
 }
 function saveFestival(){data.festival={name:document.getElementById("fName").value,date:document.getElementById("fDate").value,end:document.getElementById("fEnd").value||document.getElementById("fDate").value,before:Number(document.getElementById("fBefore").value)||10,copy:document.getElementById("fCopy").value};save();renderFestival();toast("Festival saved")}
-function saveSite(){data.wa=document.getElementById("sWa").value.replace(/\D/g,"");data.phone=document.getElementById("sPhone").value;data.tagline=document.getElementById("sTag").value;save();syncContactLinks();toast("Site settings saved")}
+function saveSite(){
+ const wa=document.getElementById("sWa").value.replace(/\D/g,"");const phone=document.getElementById("sPhone").value.trim();const tagline=document.getElementById("sTag").value.trim();
+ if(!/^\d{10,15}$/.test(wa))return toast("Enter a valid WhatsApp number");
+ fetch("/api/settings",{method:"PUT",headers:{"content-type":"application/json"},body:JSON.stringify({wa:wa,phone:phone,tagline:tagline})}).then(function(r){return r.json()}).then(function(d){
+   if(d&&d.error)return toast(d.error);data.wa=wa;data.phone=phone;data.tagline=tagline;try{localStorage.setItem("rkCashewData",JSON.stringify(data))}catch(e){}syncContactLinks();toast("Site settings saved");
+ }).catch(function(){toast("Could not save site settings")});
+}
 function adminLogout(){fetch("/api/logout",{method:"POST"}).catch(()=>{});sessionStorage.removeItem("rkAdmin");document.getElementById("adminPanel").style.display="none";document.getElementById("adminLogin").style.display="block";document.getElementById("aPass").value="";closeModal("adminModal")}
 function adminTab(name,btn){document.querySelectorAll(".adminSection").forEach(x=>x.classList.remove("active"));document.getElementById("admin-"+name).classList.add("active");document.querySelectorAll(".adminTabs button").forEach(x=>x.classList.remove("active"));btn.classList.add("active")}
 function toggleMenu(){
@@ -755,6 +778,8 @@ function submitReview(){
 document.querySelectorAll("#reviewStars button").forEach(btn=>btn.addEventListener("click",()=>{reviewRating=Number(btn.dataset.star);document.querySelectorAll("#reviewStars button").forEach(b=>b.classList.toggle("on",Number(b.dataset.star)<=reviewRating))}));
 function syncContactLinks(){const digits=(data.phone||"+91 97918 80911").replace(/\D/g,"");const tel="tel:+"+digits;document.getElementById("heroCall").href=tel;document.getElementById("footerPhone").href=tel;document.getElementById("footerPhone").textContent=(data.phone||"+91 97918 80911");}
 renderProducts();renderFestival();renderReviews();syncContactLinks();observeReveals();
+// Direct admin link support: /?admin=1 opens the real admin panel.
+if(new URLSearchParams(location.search).get("admin")==="1"){setTimeout(function(){openAdmin()},0)}
 </script>
 
 <section class="gst-note" aria-label="GST pricing information">
