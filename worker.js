@@ -115,7 +115,7 @@ export default {
         if(b.lines.some(l=>!l||!(+l.q>=0.5)))return J({error:"Minimum 0.5 kg per grade"},400);
         if(await env.KV.get("id:"+id))return J({error:"Duplicate"},409);
         const utr=String(b.utr||"").replace(/\D/g,"");let dupUtr=false;
-        if(/^\d{12}$/.test(utr)){dupUtr=!!await env.KV.get("utr:"+utr);await env.KV.put("utr:"+utr,id)}
+        if(/^\d{12}$/.test(utr)){if(/^(\d)\1{11}$/.test(utr)||"01234567890123456789".includes(utr)||"98765432109876543210".includes(utr))return J({error:"Invalid UTR number."},400);if(await env.KV.get("utr:"+utr))return J({error:"This UTR number has already been used."},400)}
         const pj=JSON.parse(await env.KV.get("prices")||"{}"),sp=pj.prices||{},sk=pj.stock||{};
         if(b.lines.some(l=>sk[clean(l.id,20)]===false))return J({error:"A grade in your order is out of stock"},409);
         const ps=JSON.parse(await env.KV.get("pin:"+pin)||"{}");let known=true,mis=false;
@@ -130,7 +130,7 @@ export default {
           utr:/^\d{12}$/.test(utr)?utr:"",dupUtr,state:ps.state||"",consentAt:Date.now(),lang:clean(b.lang,5),
           status:b.paid?"Payment Pending":"Enquiry",t:Date.now()};
         const k="o:"+String(9e12-o.t).padStart(13,"0")+":"+id;
-        await env.KV.put(k,JSON.stringify(o));await env.KV.put("id:"+id,k);
+        await env.KV.put(k,JSON.stringify(o));await env.KV.put("id:"+id,k);if(o.utr)await env.KV.put("utr:"+o.utr,id);
         notify(env,ctx,o,"New order "+id+" - "+name+" - Rs "+o.total+" - "+o.status);
         return J({ok:1,id});
       }

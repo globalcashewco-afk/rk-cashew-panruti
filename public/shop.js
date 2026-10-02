@@ -128,7 +128,7 @@ window.rkPay=function(){
   var upi="upi://pay?pa="+CFG.upi+"&pn="+encodeURIComponent(CFG.upiName)+"&am="+c.total.toFixed(2)+"&cu=INR&tn="+order.id;
   var m=document.querySelector("#cartModal .modalCard");
   m.innerHTML='<div class="modalHead"><div><div class="kicker">'+order.id+'</div><h2 style="margin:0">UPI</h2></div><button class="close" onclick="closeModal(\'cartModal\')">×</button></div><div class="pay"><div class="amt">'+inr(c.total)+'</div><div id="qrBox"><img src="images/upi-qr.webp" alt="UPI QR"></div><p class="dlv">Scan with any UPI app · '+CFG.upi+'</p><div class="row"><a class="btn gold" href="'+upi+'">GPay / PhonePe / Paytm</a></div>'+
-  '<input id="oUtr" placeholder="UPI Ref / UTR (12 digits)" inputmode="numeric"><button class="btn wa" style="margin-top:10px;width:100%" onclick="rkSend(true)">'+t("I have paid – send order on WhatsApp")+'</button>'+
+  '<input id="oUtr" placeholder="UPI Ref / UTR (12 digits)" inputmode="numeric" maxlength="12"><div class="dlv">Find your 12-digit UTR under "UPI Ref No" or "UTR" in your GPay / PhonePe / Paytm receipt.</div><button class="btn wa" style="margin-top:10px;width:100%" onclick="rkSend(true)">'+t("I have paid – send order on WhatsApp")+'</button>'+
   '<div class="payhelp">'+t("Payment problem? Call / WhatsApp us")+'<div class="row"><a class="btn" href="tel:'+CFG.phone+'">📞 9791880911</a><a class="btn wa" href="https://wa.me/'+CFG.wa+'?text='+encodeURIComponent("Payment problem for order "+order.id+" ("+inr(c.total)+"). Please help.")+'" target="_blank" rel="noopener">WhatsApp</a></div><button class="btn" style="width:100%" onclick="rkSend(false)">Send order without paying – confirm by call</button></div></div>';
   if(window.QRCode)qr(upi);else{var sc=document.createElement("script");sc.src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js";sc.onload=function(){qr(upi)};document.head.appendChild(sc)}
 };
@@ -141,7 +141,7 @@ function slip(o,paid,utr){
   x.fillStyle="#fff";x.fillRect(0,0,W,H);var g=x.createLinearGradient(0,0,W,0);g.addColorStop(0,"#0b1837");g.addColorStop(1,"#1d3a78");x.fillStyle=g;x.fillRect(0,0,W,110);
   x.fillStyle="#e5bf65";x.font="bold 34px "+F;x.fillText("RK CASHEW PANRUTI",30,52);x.fillStyle="#fff";x.font="16px "+F;x.fillText("Premium Kaju · Panruti, Tamil Nadu · +91 97918 80911",30,84);
   x.fillStyle="#111";x.font="bold 22px "+F;x.fillText("ORDER SLIP  #"+o.id,30,155);x.font="15px "+F;x.fillStyle="#555";x.fillText(o.time.toLocaleString("en-IN"),30,180);
-  x.fillStyle=paid?"#0a7d3c":"#b26a00";x.font="bold 16px "+F;x.fillText(paid?"PAID via UPI"+(utr?" · Ref "+utr:" (screenshot to follow)"):"PAYMENT PENDING – confirm by call",30,206);
+  x.fillStyle="#b26a00";x.font="bold 16px "+F;x.fillText("UNPAID - Payment Pending Manual Verification"+(utr?" · UTR "+utr:""),30,206);
   x.fillStyle="#111";x.font="bold 16px "+F;x.fillText("CUSTOMER",30,245);x.font="16px "+F;x.fillText(o.name+" · "+o.phone,30,270);
   var words=(o.addr+" – "+o.pin).split(" "),ln="",y=294;words.forEach(function(w){var tt=ln+w+" ";if(x.measureText(tt).width>740){x.fillText(ln,30,y);y+=22;ln=w+" "}else ln=tt});x.fillText(ln,30,y);y+=34;
   x.fillStyle="#0b1837";x.fillRect(30,y,740,34);x.fillStyle="#fff";x.font="bold 15px "+F;x.fillText("GRADE",42,y+23);x.fillText("QTY",330,y+23);x.fillText("RATE/KG",460,y+23);x.fillText("AMOUNT",660,y+23);y+=34;
@@ -173,10 +173,11 @@ window.rkGateway=function(){
 };
 window.rkSend=function(paid){
   if(!order)return;var utr=v("oUtr");
-  if(paid&&utr&&!/^\d{12}$/.test(utr.replace(/\s/g,""))){return toast("UTR should be 12 digits – or leave it blank and send the payment screenshot")}
+  if(paid){var u12=utr.replace(/\s/g,"");if(!/^\d{12}$/.test(u12)||/^(\d)\1{11}$/.test(u12)||"01234567890123456789".includes(u12)||"98765432109876543210".includes(u12))return toast("Enter the valid 12-digit UTR (UPI Ref No)");var sf=document.getElementById("oShot"),fz=sf&&sf.files&&sf.files[0];if(!fz)return toast("Please upload your payment screenshot");if(!/^image\/(jpeg|png)$/.test(fz.type)||fz.size<10240||fz.size>5242880)return toast("Screenshot must be JPG or PNG, 10 KB to 5 MB")}
+  if(paid&&!order.srv){var c0=order.c;fetch("/api/order",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({id:order.id,name:order.name,phone:order.phone,pin:order.pin,addr:order.addr,lines:c0.lines.map(function(l){return{id:l.id,q:l.q,price:l.price,amt:l.amt}}),sub:c0.sub,gst:c0.gst,dlv:c0.dlv,total:c0.total,utr:utr.replace(/\s/g,""),paid:true,consent:true,coupon:CP?CP.code:"",lang:lang})}).then(function(r){return r.json().then(function(d){return{ok:r.ok,s:r.status,d:d}})}).then(function(x){if(!x.ok&&x.d&&x.d.error&&x.d.error!=="Duplicate"&&x.s<500){toast(x.d.error);return}order.srv=1;window.rkSend(true)}).catch(function(){order.srv=1;window.rkSend(true)});return}
   var c=order.c,txt="*NEW ORDER "+order.id+"*\n"+c.lines.map(function(l){return"• "+l.id+" – "+l.q+" kg × "+inr(l.price)+" = "+inr(l.amt)}).join("\n")+
    "\n\nSubtotal: "+inr(c.sub)+(c.disc?"\nDiscount"+(CP?" ("+CP.code+")":"")+": -"+inr(c.disc):"")+"\nGST 5%: "+inr(c.gst)+"\nDelivery: "+inr(c.dlv)+"\n*TOTAL: "+inr(c.total)+"*\n\n*Customer:* "+order.name+"\n*Phone:* "+order.phone+"\n*Address:* "+order.addr+" – "+order.pin+
-   "\n*Payment:* "+(paid?"UPI paid"+(utr?" (Ref "+utr+")":" – screenshot attached"):"Pending – call to confirm")+"\n*Language:* "+lang;
+   "\n*Payment Status:* UNPAID (Manual bank verification required)"+(utr?"\n*UTR / Ref No:* "+utr:"")+"\n*Language:* "+lang;
   try{var all=JSON.parse(localStorage.getItem("rkOrders")||"[]");all.push({id:order.id,total:c.total,t:Date.now()});localStorage.setItem("rkOrders",JSON.stringify(all))}catch(e){}
   var sf0=(document.getElementById("oShot")||{}).files,file0=sf0&&sf0[0];
   try{fetch("/api/order",{method:"POST",keepalive:true,headers:{"content-type":"application/json"},body:JSON.stringify({id:order.id,name:order.name,phone:order.phone,pin:order.pin,addr:order.addr,lines:c.lines.map(function(l){return{id:l.id,q:l.q,price:l.price,amt:l.amt}}),sub:c.sub,gst:c.gst,dlv:c.dlv,total:c.total,utr:(utr||"").replace(/\s/g,""),paid:!!paid,consent:true,coupon:CP?CP.code:"",lang:lang})}).then(function(){upShot(order.id,file0)}).catch(function(){})}catch(e){}
@@ -257,7 +258,21 @@ syncPrices();syncPublicSettings();setInterval(syncPrices,60000);
 
 var seen=null,timer=null,cur=[];
 function beep(){try{var a=new (window.AudioContext||window.webkitAudioContext)(),o=a.createOscillator();o.connect(a.destination);o.frequency.value=880;o.start();setTimeout(function(){o.stop()},250)}catch(e){}}
-function draw(list){
+var fq="",fs="All",allO=[];
+function draw(all){
+  allO=all;var b0=document.getElementById("ordersBox");if(!b0)return;
+  if(!document.getElementById("ordBar")){
+    b0.insertAdjacentHTML("beforebegin",'<div id="ordBar" style="margin:8px 0"><input id="ordQ" placeholder="Search Order ID, name or phone" style="width:100%;padding:8px;margin-bottom:6px"><div id="ordTabs"></div></div>');
+    document.getElementById("ordQ").oninput=function(){fq=this.value;draw(allO)};
+    document.getElementById("ordTabs").onclick=function(e){var s=e.target.getAttribute("data-f");if(s){fs=s;draw(allO)}};
+  }
+  document.getElementById("ordTabs").innerHTML=["All","Unpaid","Paid","Packed","Shipped","Cancelled"].map(function(s){return'<button class="btn" data-f="'+s+'" style="padding:4px 10px;margin:2px;'+(s===fs?"font-weight:900;outline:2px solid #e5bf65":"")+'">'+s+'</button>'}).join("");
+  var q=fq.trim().toLowerCase(),qd=q.replace(/\D/g,"");
+  drawRows(all.filter(function(o){
+    if(fs==="Unpaid"?(o.status!=="Enquiry"&&o.status!=="Payment Pending"):(fs!=="All"&&o.status!==fs))return false;
+    return !q||String(o.id).toLowerCase().indexOf(q)>-1||String(o.name).toLowerCase().indexOf(q)>-1||(qd&&String(o.phone).indexOf(qd)>-1)}));
+}
+function drawRows(list){
   cur=list;var box=document.getElementById("ordersBox");if(!box)return;
   if(!list.length){box.textContent="No orders yet.";return}
   box.innerHTML='<table style="width:100%;font-size:12px;border-collapse:collapse">'+list.map(function(o){
@@ -270,8 +285,8 @@ function draw(list){
   Array.prototype.forEach.call(box.querySelectorAll("button[data-shot]"),function(b){b.onclick=function(){var wd=window.open("","_blank");fetch("/api/shot?id="+encodeURIComponent(b.dataset.shot)).then(function(r){return r.json()}).then(function(d){wd.document.write('<img style="max-width:100%" src="'+String(d.img).replace(/[^A-Za-z0-9+\/=:;,]/g,"")+'">')}).catch(function(){wd.close()})}});
   Array.prototype.forEach.call(box.querySelectorAll("button[data-inv]"),function(b){b.onclick=function(){cur.forEach(function(o){if(o.k===b.dataset.inv)invoice(o)})}});
   Array.prototype.forEach.call(box.querySelectorAll("button[data-k]"),function(b){b.onclick=function(){
-    var t="";if(b.dataset.s==="Shipped")t=prompt("Courier tracking number (optional)")||"";
-    fetch("/api/order",{method:"PATCH",headers:{"content-type":"application/json"},body:JSON.stringify({k:b.dataset.k,status:b.dataset.s,track:t})}).then(function(r){return r.json()}).then(function(d){if(d&&d.error)toast(d.error);load()})}});
+    var t="",wd=null,ord=cur.filter(function(x){return x.k===b.dataset.k})[0];if(b.dataset.s==="Shipped"){t=(prompt("Enter tracking ID, tracking link, or courier contact number:")||"").trim();if(!t)return;wd=window.open("","_blank")}else if(b.dataset.s==="Cancelled"){if(!confirm("Cancel order "+(ord?ord.id:"")+"?"))return;wd=window.open("","_blank")}
+    fetch("/api/order",{method:"PATCH",headers:{"content-type":"application/json"},body:JSON.stringify({k:b.dataset.k,status:b.dataset.s,track:t})}).then(function(r){return r.json()}).then(function(d){if(d&&d.error){toast(d.error);if(wd)wd.close();return}if(wd&&ord){var m=b.dataset.s==="Shipped"?"Hello "+ord.name+", your RK Cashew order #"+ord.id+" has been shipped! 📦 Track your parcel here: "+t+". Thank you for shopping with RK Cashew Panruti!":"Hello "+ord.name+", your RK Cashew order #"+ord.id+" has been cancelled. If you have any questions or paid via UPI, please contact us at 9791880911.";wd.location="https://wa.me/91"+ord.phone+"?text="+encodeURIComponent(m)}load()})}});
 }
 function load(){
   fetch("/api/orders",{cache:"no-store"}).then(function(r){
@@ -304,7 +319,7 @@ window.rkLoadOrders=function(){load();clearInterval(timer);timer=setInterval(fun
 (function(){
 "use strict";
 var _pay=window.rkPay;
-function shotUI(){var pp=document.querySelector("#cartModal .pay");if(pp&&window.rkGW&&window.rkGW.rzp&&!document.getElementById("oGw"))pp.insertAdjacentHTML("afterbegin",'<button class="btn gold" id="oGw" style="width:100%;margin-bottom:8px" onclick="rkGateway()">Pay securely – UPI / Card / NetBanking</button><p style="text-align:center;font-size:12px;margin:4px 0 10px">or pay by UPI QR below and enter the UTR</p>');var u=document.getElementById("oUtr");if(u&&!document.getElementById("oShot"))u.insertAdjacentHTML("beforebegin",'<label style="display:block;font-size:13px;margin-top:8px">Payment screenshot (optional)<input type="file" id="oShot" accept="image/*"></label>')}
+function shotUI(){var pp=document.querySelector("#cartModal .pay");if(pp&&window.rkGW&&window.rkGW.rzp&&!document.getElementById("oGw"))pp.insertAdjacentHTML("afterbegin",'<button class="btn gold" id="oGw" style="width:100%;margin-bottom:8px" onclick="rkGateway()">Pay securely – UPI / Card / NetBanking</button><p style="text-align:center;font-size:12px;margin:4px 0 10px">or pay by UPI QR below and enter the UTR</p>');var u=document.getElementById("oUtr");if(u&&!document.getElementById("oShot"))u.insertAdjacentHTML("beforebegin",'<label style="display:block;font-size:13px;margin-top:8px">Payment screenshot (required)<input type="file" id="oShot" accept="image/*"></label>')}
 window.rkPay=function(){
   var g=function(i){var e=document.getElementById(i);return e?e.value.trim():""};
   var name=g("oName"),ph=g("oPhone").replace(/\D/g,""),pin=g("oPin");
