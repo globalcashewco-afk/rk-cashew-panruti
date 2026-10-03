@@ -1,7 +1,7 @@
 {
   // Cloudflare Worker (API) + static assets. Deploy with: npx wrangler deploy  (wrangler 4.45+ auto-creates the KV namespace)
   "name": "rk-cashew-panruti",
-  "main": "worker-wrapped.js",
+  "main": "worker.js",
   "compatibility_date": "2025-09-01",
   "assets": { "directory": "./public", "binding": "ASSETS", "html_handling": "auto-trailing-slash", "not_found_handling": "404-page", "run_worker_first": ["/api/*"] },
   "kv_namespaces": [ { "binding": "KV" } ]
