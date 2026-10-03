@@ -112,7 +112,7 @@ export default {
         const name=clean(b.name,80),addr=clean(b.addr,300),total=Number(b.total);
         if(!/^[A-Za-z0-9-]{4,30}$/.test(id)||!/^[6-9]\d{9}$/.test(phone)||!/^\d{6}$/.test(pin)||name.length<2||addr.length<5||!(total>0&&total<1e6)||!Array.isArray(b.lines)||!b.lines.length||b.lines.length>20)return J({error:"Invalid order"},400);
         if(b.consent!==true)return J({error:"Consent required"},400);
-        if(b.lines.some(l=>!l||!(+l.q>=0.5)))return J({error:"Minimum 0.5 kg per grade"},400);
+        if(b.lines.some(l=>!l||!(+l.q>0)))return J({error:"Enter a quantity for each product"},400);
         if(await env.KV.get("id:"+id))return J({error:"Duplicate"},409);
         const utr=String(b.utr||"").replace(/\D/g,"");let dupUtr=false;
         if(/^\d{12}$/.test(utr)){if(/^(\d)\1{11}$/.test(utr)||"01234567890123456789".includes(utr)||"98765432109876543210".includes(utr))return J({error:"Invalid UTR number."},400);if(await env.KV.get("utr:"+utr))return J({error:"This UTR number has already been used."},400)}
@@ -155,7 +155,8 @@ export default {
       if(p==="/api/prices"&&req.method==="PUT"){
         const b=await body(req),out={},st={};
         for(const [id,v] of Object.entries(b.prices||{})){const n=Number(v);if(/^[A-Za-z0-9 -]{1,20}$/.test(id)&&n>0&&n<100000){out[id]=n;st[id]=(b.stock||{})[id]!==false}}
-        await env.KV.put("prices",JSON.stringify({prices:out,stock:st,updated:Date.now()}));return J({ok:1});
+        const old=JSON.parse(await env.KV.get("prices")||"{}"),chg={...(old.chg||{})};for(const id of Object.keys(out)){const o0=(old.prices||{})[id];if(o0&&o0!==out[id])chg[id]={from:o0,at:Date.now()}}
+        await env.KV.put("prices",JSON.stringify({prices:out,stock:st,chg,updated:Date.now()}));return J({ok:1});
       }
       if(p==="/api/settings"&&req.method==="PUT"){
         const b=await body(req),old=JSON.parse(await env.KV.get("settings")||"{}"),g=b.gstin!=null?clean(b.gstin,15).toUpperCase():String(old.gstin||"");
