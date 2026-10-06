@@ -522,7 +522,21 @@ img{max-width:100%}
     <button onclick="adminTab('store',this);window.rkLoadSettings&&window.rkLoadSettings()">Store</button>
     <button onclick="adminTab('site',this)">Site</button>
    </div>
-   <div id="admin-prices" class="adminSection active"><div id="adminProducts" class="adminGrid"></div></div>
+   <div id="admin-prices" class="adminSection active">
+    <div id="adminProducts" class="adminGrid"></div>
+    <div class="adminProduct" style="margin-top:14px">
+      <h4>Add new product</h4>
+      <div class="formgrid">
+       <div><label>Product name / code</label><input id="newPid" placeholder="e.g. Roasted Cashew"></div>
+       <div><label>Starting price / kg</label><input id="newPprice" type="number" min="1" placeholder="₹"></div>
+       <div class="full"><label>Description</label><input id="newPdesc" placeholder="Short product description"></div>
+       <div class="full"><label>Image URL/path (optional)</label><input id="newPimage" placeholder="images/roasted-cashew.webp"></div>
+       <div><label>Category</label><input id="newPcat" value="Cashew"></div>
+      </div>
+      <button class="btn gold" style="margin-top:10px;width:100%" onclick="addAdminProduct()">Add product to website</button>
+      <p style="color:var(--muted);font-size:11px;margin:8px 0 0">New products appear on the public shop after saving. You can change the price or mark stock unavailable anytime.</p>
+    </div>
+   </div>
    <div id="admin-festival" class="adminSection">
     <div class="formgrid">
       <div><label>Festival name</label><input id="fName"></div>
@@ -573,14 +587,14 @@ const DEFAULTS={
   wa:"919791880911", phone:"+91 97918 80911",
   tagline:"Fresh premium cashews from Panruti",
   products:[
-    {id:"W210",price:1200,desc:"Large whole kernels • premium choice",stock:true},
-    {id:"W240",price:890,desc:"Large whole kernels • premium serving",stock:true},
-    {id:"W320",price:800,desc:"Popular whole kernels • everyday use",stock:true},
-    {id:"W400",price:730,desc:"Smaller whole kernels • value choice",stock:true},
-    {id:"SWP",price:750,desc:"Small whole pieces • sweets & recipes",stock:true},
-    {id:"SP",price:650,desc:"Cashew pieces • cooking & sweets",stock:true},
-    {id:"JB",price:760,desc:"Broken / pieces • kitchen use",stock:true},
-    {id:"JH",price:780,desc:"Broken kernels • desserts & cooking",stock:true}
+    {id:"W210",price:1200,desc:"Large whole kernels • premium choice",stock:true,image:"images/grade-w210.webp",category:"Cashew"},
+    {id:"W240",price:890,desc:"Large whole kernels • premium serving",stock:true,image:"images/grade-w240.webp",category:"Cashew"},
+    {id:"W320",price:800,desc:"Popular whole kernels • everyday use",stock:true,image:"images/grade-w320.webp",category:"Cashew"},
+    {id:"W400",price:730,desc:"Smaller whole kernels • value choice",stock:true,image:"images/grade-w400.webp",category:"Cashew"},
+    {id:"SWP",price:750,desc:"Small whole pieces • sweets & recipes",stock:true,image:"images/grade-swp.webp",category:"Cashew"},
+    {id:"SP",price:650,desc:"Cashew pieces • cooking & sweets",stock:true,image:"images/grade-sp.webp",category:"Cashew"},
+    {id:"JB",price:760,desc:"Broken / pieces • kitchen use",stock:true,image:"images/grade-jb.webp",category:"Cashew"},
+    {id:"JH",price:780,desc:"Broken kernels • desserts & cooking",stock:true,image:"images/grade-jh.webp",category:"Cashew"}
   ],
   festival:{
     name:"Diwali Special",date:"2026-11-08",end:"2026-11-08",before:10,
@@ -607,11 +621,12 @@ const PRODUCT_IMAGES={
  W210:"images/grade-w210.webp",W240:"images/grade-w240.webp",W320:"images/grade-w320.webp",W400:"images/grade-w400.webp",
  SWP:"images/grade-swp.webp",SP:"images/grade-sp.webp",JB:"images/grade-jb.webp",JH:"images/grade-jh.webp"
 };
+function productImage(p){return p.image||({"W210":"images/grade-w210.webp","W240":"images/grade-w240.webp","W320":"images/grade-w320.webp","W400":"images/grade-w400.webp","SWP":"images/grade-swp.webp","SP":"images/grade-sp.webp","JB":"images/grade-jb.webp","JH":"images/grade-jh.webp"}[p.id])||"images/whole-clean.webp"}
 function renderProducts(){
  const grid=document.getElementById("gradeGrid");
  grid.innerHTML=data.products.map((p,i)=>`
  <article class="card reveal">
-  <div class="gradeTop"><img class="gradePhoto" src="${PRODUCT_IMAGES[p.id]||"images/whole-clean.webp"}" alt="${p.id} cashew kernels" loading="lazy" onerror="this.onerror=null;this.src='images/whole-clean.jpg'"><small>${p.stock?"IN STOCK":"OUT OF STOCK"}</small><span class="gradeBadge">${p.id}</span></div>
+  <div class="gradeTop"><img class="gradePhoto" src="${productImage(p)}" alt="${p.id} cashew kernels" loading="lazy" onerror="this.onerror=null;this.src='images/whole-clean.jpg'"><small>${p.stock?"IN STOCK":"OUT OF STOCK"}</small><span class="gradeBadge">${p.id}</span></div>
   <div class="gradeBody">
    <h3>${p.id}</h3><div class="desc">${p.desc}</div>
    <div class="priceRow"><div class="price">${money(p.price)} <small>/ kg</small></div><span class="stock" style="${p.stock?"":"background:#fff0f0;color:#c33"}">${p.stock?"Available":"Unavailable"}</span></div>
@@ -722,8 +737,10 @@ function renderAdmin(){
  <div class="adminProduct"><h4>${p.id}</h4><div class="formgrid">
  <div><label>Price / kg</label><input id="ap-${i}" type="number" min="1" value="${p.price}"></div>
  <div><label>Stock</label><select id="as-${i}"><option value="true" ${p.stock?"selected":""}>Available</option><option value="false" ${!p.stock?"selected":""}>Unavailable</option></select></div>
- <div class="full"><label>Description</label><input id="ad-${i}" value="${p.desc}"></div></div>
- <button class="btn" style="margin-top:8px;background:#0b1837;color:#fff;width:100%" onclick="saveProduct(${i})">Save ${p.id}</button></div>`}).join("");
+ <div class="full"><label>Description</label><input id="ad-${i}" value="${p.desc||""}"></div>
+ <div class="full"><label>Image URL/path</label><input id="ai-${i}" value="${p.image||""}" placeholder="images/product.webp"></div></div>
+ <button class="btn" style="margin-top:8px;background:#0b1837;color:#fff;width:100%" onclick="saveProduct(${i})">Save ${p.id}</button>
+ <button class="btn ghost" style="margin-top:6px;width:100%" onclick="removeAdminProduct(${i})">Remove from website</button></div>`}).join("");
  document.getElementById("fName").value=data.festival.name;document.getElementById("fDate").value=data.festival.date;document.getElementById("fEnd").value=data.festival.end;document.getElementById("fCopy").value=data.festival.copy;document.getElementById("fBefore").value=data.festival.before;
  document.getElementById("sWa").value=data.wa;document.getElementById("sPhone").value=data.phone;document.getElementById("sTag").value=data.tagline;
 }
@@ -735,12 +752,37 @@ function loadAdminPrices(){
  }).catch(function(){renderAdmin()});
 }
 function saveProduct(i){
- const p=data.products[i],price=Number(document.getElementById("ap-"+i).value),stock=document.getElementById("as-"+i).value==="true",desc=document.getElementById("ad-"+i).value.trim();
+ const p=data.products[i],price=Number(document.getElementById("ap-"+i).value),stock=document.getElementById("as-"+i).value==="true",desc=document.getElementById("ad-"+i).value.trim(),image=document.getElementById("ai-"+i).value.trim();
  if(!(price>0))return toast("Enter a valid price for "+p.id);
- const prices={},stocks={};data.products.forEach(function(x,j){prices[x.id]=j===i?price:x.price;stocks[x.id]=j===i?stock:!!x.stock});
- fetch("/api/prices",{method:"PUT",headers:{"content-type":"application/json"},body:JSON.stringify({prices:prices,stock:stocks})}).then(function(r){return r.json()}).then(function(d){
-   if(d&&d.error)return toast(d.error);p.price=price;p.stock=stock;p.desc=desc;try{localStorage.setItem("rkCashewData",JSON.stringify(data))}catch(e){}renderProducts();renderAdmin();toast(p.id+" saved");
- }).catch(function(){toast("Could not save price. Check connection.")});
+ const products=data.products.map(function(x,j){return j===i?{...x,price:price,stock:stock,desc:desc,image:image}:x});
+ fetch("/api/catalog",{method:"PUT",headers:{"content-type":"application/json"},body:JSON.stringify({products:products})}).then(function(r){return r.json()}).then(function(d){
+   if(d&&d.error)return toast(d.error);data.products=d.products||products;try{localStorage.setItem("rkCashewData",JSON.stringify(data))}catch(e){}renderProducts();renderAdmin();toast(p.id+" saved");
+ }).catch(function(){toast("Could not save product. Check connection.")});
+}
+function addAdminProduct(){
+ const id=document.getElementById("newPid").value.trim().toUpperCase(),price=Number(document.getElementById("newPprice").value),
+       desc=document.getElementById("newPdesc").value.trim(),image=document.getElementById("newPimage").value.trim(),
+       category=document.getElementById("newPcat").value.trim()||"Cashew";
+ if(!/^[A-Z0-9][A-Z0-9 _-]{0,29}$/.test(id))return toast("Enter a valid product code/name");
+ if(data.products.some(function(x){return x.id===id}))return toast(id+" already exists");
+ if(!(price>0&&price<100000))return toast("Enter a valid price");
+ const product={id:id,price:price,desc:desc,stock:true,image:image,category:category};
+ const products=data.products.concat([product]);
+ fetch("/api/catalog",{method:"PUT",headers:{"content-type":"application/json"},body:JSON.stringify({products:products})}).then(function(r){return r.json()}).then(function(d){
+   if(d&&d.error)return toast(d.error);data.products=d.products||products;
+   ["newPid","newPprice","newPdesc","newPimage","newPcat"].forEach(function(x){const el=document.getElementById(x);if(el)el.value=""});
+   try{localStorage.setItem("rkCashewData",JSON.stringify(data))}catch(e){}
+   renderProducts();renderAdmin();toast(id+" added to website");
+ }).catch(function(){toast("Could not add product. Check connection.")});
+}
+function removeAdminProduct(i){
+ const p=data.products[i];if(!p)return;
+ if(data.products.length<=1)return toast("Keep at least one product");
+ if(!confirm("Hide/remove "+p.id+" from the website? Existing orders are not changed."))return;
+ const products=data.products.filter(function(_,j){return j!==i});
+ fetch("/api/catalog",{method:"PUT",headers:{"content-type":"application/json"},body:JSON.stringify({products:products})}).then(function(r){return r.json()}).then(function(d){
+   if(d&&d.error)return toast(d.error);data.products=d.products||products;try{localStorage.setItem("rkCashewData",JSON.stringify(data))}catch(e){}renderProducts();renderAdmin();toast(p.id+" removed");
+ }).catch(function(){toast("Could not remove product")});
 }
 function saveFestival(){data.festival={name:document.getElementById("fName").value,date:document.getElementById("fDate").value,end:document.getElementById("fEnd").value||document.getElementById("fDate").value,before:Number(document.getElementById("fBefore").value)||10,copy:document.getElementById("fCopy").value};save();renderFestival();toast("Festival saved")}
 function saveSite(){
@@ -779,7 +821,14 @@ function submitReview(){
 }
 document.querySelectorAll("#reviewStars button").forEach(btn=>btn.addEventListener("click",()=>{reviewRating=Number(btn.dataset.star);document.querySelectorAll("#reviewStars button").forEach(b=>b.classList.toggle("on",Number(b.dataset.star)<=reviewRating))}));
 function syncContactLinks(){const digits=(data.phone||"+91 97918 80911").replace(/\D/g,"");const tel="tel:+"+digits;document.getElementById("heroCall").href=tel;document.getElementById("footerPhone").href=tel;document.getElementById("footerPhone").textContent=(data.phone||"+91 97918 80911");}
-renderProducts();renderFestival();renderReviews();syncContactLinks();observeReveals();
+async function loadPublicCatalog(){
+ try{
+   const r=await fetch("/api/catalog",{cache:"no-store"});
+   if(r.ok){const d=await r.json();if(Array.isArray(d.products)&&d.products.length){data.products=d.products;try{localStorage.setItem("rkCashewData",JSON.stringify(data))}catch(e){}}}
+ }catch(e){}
+ renderProducts();renderFestival();renderReviews();syncContactLinks();observeReveals();
+}
+loadPublicCatalog();
 // Direct admin link support: /?admin=1 opens the Admin login modal; username/password are still required.
 if(new URLSearchParams(location.search).get("admin")==="1"){setTimeout(function(){openAdmin()},0)}
 </script>
