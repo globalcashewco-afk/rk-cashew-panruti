@@ -163,7 +163,15 @@ export default {
         const b=await body(req),out={},st={};
         for(const [id,v] of Object.entries(b.prices||{})){const n=Number(v);if(/^[A-Za-z0-9 -]{1,20}$/.test(id)&&n>0&&n<100000){out[id]=n;st[id]=(b.stock||{})[id]!==false}}
         const old=JSON.parse(await env.KV.get("prices")||"{}"),chg={...(old.chg||{})};for(const id of Object.keys(out)){const o0=(old.prices||{})[id];if(o0&&o0!==out[id])chg[id]={from:o0,at:Date.now()}}
-        await env.KV.put("prices",JSON.stringify({prices:out,stock:st,chg,updated:Date.now()}));return J({ok:1});
+        const updated=Date.now();
+        await env.KV.put("prices",JSON.stringify({prices:out,stock:st,chg,updated}));
+        const catalog=JSON.parse(await env.KV.get("catalog")||"null");
+        if(catalog&&Array.isArray(catalog.products)){
+          catalog.products=catalog.products.filter(x=>Object.prototype.hasOwnProperty.call(out,x.id)).map(x=>({...x,price:out[x.id],stock:st[x.id]!==false}));
+          catalog.updated=updated;
+          await env.KV.put("catalog",JSON.stringify(catalog));
+        }
+        return J({ok:1});
       }
       if(p==="/api/catalog"&&req.method==="PUT"){
         const b=await body(req);
