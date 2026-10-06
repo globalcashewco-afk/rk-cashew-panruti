@@ -44,8 +44,7 @@ export default {
         const c=JSON.parse(await env.KV.get("catalog")||"null");
         if(c&&Array.isArray(c.products))return J(c);
         const pr=JSON.parse(await env.KV.get("prices")||'{"prices":{},"stock":{}}');
-        const products=Object.entries(pr.prices||{}).map(([id,price])=>({id,price:Number(price),desc:"",stock:pr.stock?.[id]!==false,image:"",category:"Cashew"}));
-        return J({products,updated:pr.updated||0});
+        return J({products:[],prices:pr.prices||{},stock:pr.stock||{},updated:pr.updated||0});
       }
       if(p==="/api/prices"&&req.method==="GET"){return J(JSON.parse(await env.KV.get("prices")||'{"prices":{},"updated":0}'))}
       if(p==="/api/settings"&&req.method==="GET"){const S=JSON.parse(await env.KV.get("settings")||"{}");if(!await isAdmin(req,env))delete S.coupons;return J(S)}
