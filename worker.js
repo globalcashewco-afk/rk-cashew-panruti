@@ -40,6 +40,13 @@ export default {
     const ip=req.headers.get("cf-connecting-ip")||"x";
     if(req.method!=="GET"){const o=req.headers.get("origin");let oh="";try{oh=new URL(o).host}catch(e){oh="bad"}if(o&&oh!==url.host)return J({error:"Bad origin"},403)}
     try{
+      if(p==="/api/catalog"&&req.method==="GET"){
+        const c=JSON.parse(await env.KV.get("catalog")||"null");
+        if(c&&Array.isArray(c.products))return J(c);
+        const pr=JSON.parse(await env.KV.get("prices")||'{"prices":{},"stock":{}}');
+        const products=Object.entries(pr.prices||{}).map(([id,price])=>({id,price:Number(price),desc:"",stock:pr.stock?.[id]!==false,image:"",category:"Cashew"}));
+        return J({products,updated:pr.updated||0});
+      }
       if(p==="/api/prices"&&req.method==="GET"){return J(JSON.parse(await env.KV.get("prices")||'{"prices":{},"updated":0}'))}
       if(p==="/api/settings"&&req.method==="GET"){const S=JSON.parse(await env.KV.get("settings")||"{}");if(!await isAdmin(req,env))delete S.coupons;return J(S)}
       if(p==="/api/coupon"&&req.method==="GET"){if(!await rl(env,"rl:cp:"+ip,30,3600))return J({error:"Too many tries"},429);const c=coupon(JSON.parse(await env.KV.get("settings")||"{}"),url.searchParams.get("code"));return J(c?{ok:1,...c}:{ok:0})}
@@ -157,6 +164,32 @@ export default {
         for(const [id,v] of Object.entries(b.prices||{})){const n=Number(v);if(/^[A-Za-z0-9 -]{1,20}$/.test(id)&&n>0&&n<100000){out[id]=n;st[id]=(b.stock||{})[id]!==false}}
         const old=JSON.parse(await env.KV.get("prices")||"{}"),chg={...(old.chg||{})};for(const id of Object.keys(out)){const o0=(old.prices||{})[id];if(o0&&o0!==out[id])chg[id]={from:o0,at:Date.now()}}
         await env.KV.put("prices",JSON.stringify({prices:out,stock:st,chg,updated:Date.now()}));return J({ok:1});
+      }
+      if(p==="/api/catalog"&&req.method==="PUT"){
+        const b=await body(req);
+        if(!Array.isArray(b.products)||b.products.length<1||b.products.length>100)return J({error:"Invalid product catalog"},400);
+        const seen=new Set(),products=[];
+        for(const x of b.products){
+          const id=clean(x.id,30).toUpperCase();
+          const price=Number(x.price);
+          if(!/^[A-Z0-9][A-Z0-9 _-]{0,29}$/.test(id)||seen.has(id)||!(price>0&&price<100000))return J({error:"Invalid product: "+id},400);
+          seen.add(id);
+          products.push({
+            id,price,
+            desc:clean(x.desc,240),
+            stock:x.stock!==false,
+            image:clean(x.image,300),
+            category:clean(x.category,60)||"Cashew"
+          });
+        }
+        const prices={},stock={};
+        for(const x of products){prices[x.id]=x.price;stock[x.id]=x.stock}
+        const old=JSON.parse(await env.KV.get("prices")||"{}"),chg={...(old.chg||{})};
+        for(const x of products){const before=Number((old.prices||{})[x.id]||0);if(before&&before!==x.price)chg[x.id]={from:before,at:Date.now()}}
+        const now=Date.now();
+        await env.KV.put("catalog",JSON.stringify({products,updated:now}));
+        await env.KV.put("prices",JSON.stringify({prices,stock,chg,updated:now}));
+        return J({ok:1,products,updated:now});
       }
       if(p==="/api/settings"&&req.method==="PUT"){
         const b=await body(req),old=JSON.parse(await env.KV.get("settings")||"{}"),g=b.gstin!=null?clean(b.gstin,15).toUpperCase():String(old.gstin||"");
