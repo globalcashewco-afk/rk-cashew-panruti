@@ -1,0 +1,1 @@
+CI runs test-worker.mjs against worker.js and the production worker-wrapped.js entry point on pushes and pull requests to main. Cloudflare deployment remains npx wrangler deploy as documented in DEPLOY-GITHUB-CLOUDFLARE.txt.
