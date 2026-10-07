@@ -1,0 +1,23 @@
+name: RK Cashew production tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Test API worker
+        run: node test-worker.mjs worker.js
+      - name: Test production wrapper
+        run: node test-production-wrapper.mjs
