@@ -519,6 +519,7 @@ img{max-width:100%}
     <button class="active" onclick="adminTab('prices',this)">Prices</button>
     <button onclick="adminTab('festival',this)">Festival</button>
     <button onclick="adminTab('orders',this);window.rkLoadOrders&&rkLoadOrders()">Orders</button>
+    <button onclick="adminTab('billing',this);rkBillingInit()">Orders &amp; Invoices</button>
     <button onclick="adminTab('store',this);window.rkLoadSettings&&window.rkLoadSettings()">Store</button>
     <button onclick="adminTab('site',this)">Site</button>
    </div>
@@ -549,6 +550,72 @@ img{max-width:100%}
     <p style="color:var(--muted);font-size:11px">For annual campaigns, update the date for the relevant year. The public banner automatically appears only inside the configured window.</p>
    </div>
    <div id="admin-orders" class="adminSection"><div id="ordersBox" style="overflow-x:auto">Open this tab to load orders.</div></div>
+   <div id="admin-billing" class="adminSection">
+    <div class="adminProduct">
+     <h3 style="margin:0 0 6px">Order &amp; Invoice Management</h3>
+     <p style="margin:0;color:var(--muted);font-size:12px">Create a manual order or extract details from a screenshot. Review all extracted values before confirming or generating an invoice.</p>
+     <div class="adminTabs" style="flex-wrap:wrap">
+      <button class="active" onclick="rkBillingView('manual',this)">Manual Order</button>
+      <button onclick="rkBillingView('ocr',this)">Screenshot → OCR</button>
+      <button onclick="rkBillingView('seller',this)">Seller Profiles</button>
+      <button onclick="rkBillingView('history',this);rkBillingHistory()">Invoice History</button>
+     </div>
+     <p id="rkBillMsg" role="status" style="color:var(--red);font-size:12px;white-space:pre-wrap"></p>
+    </div>
+    <div id="rkBill-manual" class="adminProduct" style="margin-top:12px">
+     <h4>Customer / Bill To / Ship To</h4>
+     <div class="formgrid">
+      <div class="full"><label>Seller profile</label><select id="rkSellerSelect"><option value="">Choose seller profile</option></select></div>
+      <div><label>Invoice date</label><input id="rkInvoiceDate" type="date"></div>
+      <div><label>Customer / Bill To name *</label><input id="rkCustomer" autocomplete="name"></div>
+      <div><label>Phone</label><input id="rkPhone" inputmode="tel"></div>
+      <div><label>Email</label><input id="rkEmail" type="email"></div>
+      <div class="full"><label>Bill To address</label><textarea id="rkAddress" rows="2"></textarea></div>
+      <div class="full"><label>Ship To address (if different)</label><textarea id="rkShipTo" rows="2"></textarea></div>
+      <div><label>Customer GSTIN</label><input id="rkGstin" maxlength="15"></div>
+      <div><label>Place of supply</label><input id="rkSupply"></div>
+     </div>
+     <h4 style="margin-top:16px">Products + HSN + quantity + rate</h4>
+     <div id="rkBillLines"></div>
+     <button class="btn ghost" type="button" onclick="rkBillAddLine()">+ Add product line</button>
+     <div class="formgrid" style="margin-top:12px">
+      <div><label>GST rate (%)</label><input id="rkGstRate" type="number" min="0" max="28" step="0.1" value="5" oninput="rkBillCalc()"></div>
+      <div><label>Payment mode</label><select id="rkPayMode"><option value="">Select</option><option>NEFT</option><option>UPI</option><option>IMPS</option><option>RTGS</option><option>Cash</option><option>Card</option><option>Credit</option></select></div>
+      <div><label>UTR / UPI transaction reference</label><input id="rkPayRef"></div>
+      <div><label>Delivery responsibility</label><select id="rkDelivery"><option>Seller</option><option>Buyer pickup</option><option>Third-party courier</option></select></div>
+      <div class="full"><label>Courier / transporter details</label><input id="rkTransporter"></div>
+     </div>
+     <div id="rkBillTotals" style="padding:12px;margin-top:12px;border-radius:10px;background:var(--line);line-height:1.8">Enter product lines to calculate totals.</div>
+     <p style="font-size:11px;color:var(--muted)">GST is calculated at the selected rate. Confirm the correct rate and intra-state/inter-state tax treatment with your accountant before issuing a tax invoice.</p>
+     <button class="btn gold" type="button" style="width:100%;margin-top:12px" onclick="rkBillFinalize()">Verify &amp; Create Invoice</button>
+    </div>
+    <div id="rkBill-ocr" class="adminProduct" style="display:none;margin-top:12px">
+     <h4>Screenshot → OCR</h4>
+     <p style="font-size:12px;color:var(--muted)">Choose a JPEG, PNG or WebP screenshot up to 1.2 MB. OCR only extracts a draft; it never confirms an order automatically.</p>
+     <label>Upload screenshot</label><input id="rkOcrFile" type="file" accept="image/jpeg,image/png,image/webp">
+     <button class="btn gold" type="button" style="width:100%;margin-top:10px" onclick="rkRunOCR()">Extract details for review</button>
+     <p id="rkOcrReview" style="font-size:12px;white-space:pre-wrap"></p>
+     <button class="btn ghost" type="button" onclick="rkBillingView('manual',document.querySelector('#admin-billing .adminTabs button'))">Review/edit in Manual Order</button>
+    </div>
+    <div id="rkBill-seller" class="adminProduct" style="display:none;margin-top:12px">
+     <h4>Seller profile</h4>
+     <input id="rkProfileId" type="hidden">
+     <div class="formgrid">
+      <div><label>Legal name *</label><input id="rkSellerLegal"></div><div><label>Trade name</label><input id="rkSellerTrade"></div>
+      <div class="full"><label>Registered address *</label><textarea id="rkSellerAddress" rows="2"></textarea></div>
+      <div><label>Seller GSTIN</label><input id="rkSellerGstin" maxlength="15"></div><div><label>State</label><input id="rkSellerState"></div>
+      <div><label>State code</label><input id="rkSellerStateCode"></div><div><label>FSSAI (optional)</label><input id="rkSellerFssai"></div>
+      <div><label>Bank name/details</label><input id="rkSellerBank"></div><div><label>UPI ID</label><input id="rkSellerUpi"></div>
+      <div><label>Invoice prefix</label><input id="rkSellerPrefix" value="RK"></div>
+     </div>
+     <button class="btn gold" type="button" style="margin-top:12px;width:100%" onclick="rkSaveSeller()">Save seller profile</button>
+     <div id="rkSellerList" style="margin-top:12px"></div>
+    </div>
+    <div id="rkBill-history" class="adminProduct" style="display:none;margin-top:12px">
+     <h4>Invoice / order history</h4><button class="btn ghost" onclick="rkBillingHistory()">Refresh history</button>
+     <div id="rkInvoiceList" style="overflow-x:auto;margin-top:12px">Loading…</div>
+    </div>
+   </div>
    <div id="admin-store" class="adminSection"><div class="formgrid">
     <div><label>Business name</label><input id="stBiz"></div><div><label>Phone</label><input id="stPhone"></div>
     <div class="full"><label>Address</label><input id="stAddr"></div>
@@ -792,6 +859,25 @@ function saveSite(){
    if(d&&d.error)return toast(d.error);data.wa=wa;data.phone=phone;data.tagline=tagline;try{localStorage.setItem("rkCashewData",JSON.stringify(data))}catch(e){}syncContactLinks();toast("Site settings saved");
  }).catch(function(){toast("Could not save site settings")});
 }
+
+// Order & invoice workspace
+let rkBillProfiles=[];
+function rkBillingMsg(t,bad=true){const e=document.getElementById("rkBillMsg");if(e){e.style.color=bad?"var(--red)":"#16803d";e.textContent=t||""}}
+async function rkBillApi(path,options={}){const r=await fetch(path,{cache:"no-store",...options,headers:{"content-type":"application/json",...(options.headers||{})}});const d=await r.json().catch(()=>({error:"Unexpected server response"}));if(!r.ok)throw new Error(d.error||("Request failed ("+r.status+")")+(d.warnings?": "+d.warnings.join("; "):""));return d}
+function rkBillingView(which,btn){["manual","ocr","seller","history"].forEach(x=>{const e=document.getElementById("rkBill-"+x);if(e)e.style.display=x===which?"block":"none"});document.querySelectorAll("#admin-billing .adminTabs button").forEach(b=>b.classList.remove("active"));if(btn)btn.classList.add("active");if(which==="seller")rkRenderSellerList();if(which==="history")rkBillingHistory()}
+async function rkBillingInit(){try{await rkLoadProfiles();if(!document.querySelector("#rkBillLines .rkBillLine"))rkBillAddLine();const d=document.getElementById("rkInvoiceDate");if(d&&!d.value)d.value=new Date().toISOString().slice(0,10);rkBillingMsg("",false)}catch(e){rkBillingMsg(e.message)}}
+async function rkLoadProfiles(){const d=await rkBillApi("/api/automation/profiles");rkBillProfiles=d.profiles||[];const sel=document.getElementById("rkSellerSelect");if(sel){const prev=sel.value;sel.innerHTML='<option value="">Choose seller profile</option>'+rkBillProfiles.filter(x=>x.active!==false).map(x=>'<option value="'+escapeHtml(x.id)+'">'+escapeHtml(x.tradeName||x.legalName)+'</option>').join("");if(rkBillProfiles.some(x=>x.id===prev))sel.value=prev;else if(rkBillProfiles.length===1)sel.value=rkBillProfiles[0].id}rkRenderSellerList()}
+function rkRenderSellerList(){const e=document.getElementById("rkSellerList");if(!e)return;e.innerHTML=rkBillProfiles.length?rkBillProfiles.map(p=>'<div style="padding:10px;border:1px solid var(--line);border-radius:8px;margin-top:8px"><b>'+escapeHtml(p.tradeName||p.legalName)+'</b><div style="font-size:12px">'+escapeHtml(p.address||"")+'</div><button class="btn ghost" onclick="rkEditSeller(\''+escapeHtml(p.id)+'\')">Edit</button> <button class="btn ghost" onclick="rkDeleteSeller(\''+escapeHtml(p.id)+'\')">Delete</button></div>').join(""):"No seller profiles saved yet."}
+function rkEditSeller(id){const p=rkBillProfiles.find(x=>x.id===id);if(!p)return;const m={rkProfileId:"id",rkSellerLegal:"legalName",rkSellerTrade:"tradeName",rkSellerAddress:"address",rkSellerGstin:"gstin",rkSellerState:"state",rkSellerStateCode:"stateCode",rkSellerFssai:"fssai",rkSellerBank:"bank",rkSellerUpi:"upi",rkSellerPrefix:"invoicePrefix"};Object.keys(m).forEach(k=>document.getElementById(k).value=p[m[k]]||"");rkBillingView("seller",document.querySelectorAll("#admin-billing .adminTabs button")[2])}
+async function rkSaveSeller(){try{const v=id=>document.getElementById(id).value.trim();const profile={id:v("rkProfileId"),legalName:v("rkSellerLegal"),tradeName:v("rkSellerTrade"),address:v("rkSellerAddress"),gstin:v("rkSellerGstin").toUpperCase(),state:v("rkSellerState"),stateCode:v("rkSellerStateCode"),fssai:v("rkSellerFssai"),bank:v("rkSellerBank"),upi:v("rkSellerUpi"),invoicePrefix:v("rkSellerPrefix")||"RK",active:true};await rkBillApi("/api/automation/profiles",{method:"PUT",body:JSON.stringify({profile})});document.getElementById("rkProfileId").value="";await rkLoadProfiles();rkBillingMsg("Seller profile saved.",false)}catch(e){rkBillingMsg(e.message)}}
+async function rkDeleteSeller(id){if(!confirm("Delete this seller profile? Existing invoices are not deleted."))return;try{await rkBillApi("/api/automation/profiles?id="+encodeURIComponent(id),{method:"DELETE"});await rkLoadProfiles();rkBillingMsg("Seller profile deleted.",false)}catch(e){rkBillingMsg(e.message)}}
+function rkBillAddLine(x={}){const wrap=document.getElementById("rkBillLines"),d=document.createElement("div");d.className="rkBillLine adminProduct";d.style.marginTop="8px";d.innerHTML='<div class="formgrid"><div><label>Product name *</label><input class="rl-name" value="'+escapeHtml(x.name||"")+'" placeholder="Cashew grade"></div><div><label>HSN</label><input class="rl-hsn" value="'+escapeHtml(x.hsn||"0801")+'"></div><div><label>Quantity *</label><input class="rl-qty" type="number" min="0.001" step="0.001" value="'+escapeHtml(x.qty??1)+'" oninput="rkBillCalc()"></div><div><label>Unit</label><select class="rl-unit"><option>kg</option><option>g</option><option>box</option><option>pcs</option><option>bag</option></select></div><div><label>Rate (₹) *</label><input class="rl-rate" type="number" min="0" step="0.01" value="'+escapeHtml(x.rate??"")+'" oninput="rkBillCalc()"></div><div><label>Discount (₹)</label><input class="rl-disc" type="number" min="0" step="0.01" value="'+escapeHtml(x.discount??0)+'" oninput="rkBillCalc()"></div><div class="full"><button type="button" class="btn ghost" onclick="this.closest(\'.rkBillLine\').remove();rkBillCalc()">Remove line</button></div></div>';wrap.appendChild(d);if(x.unit)d.querySelector(".rl-unit").value=x.unit;rkBillCalc()}
+function rkBillGetLines(){return Array.from(document.querySelectorAll("#rkBillLines .rkBillLine")).map(e=>({name:e.querySelector(".rl-name").value.trim(),hsn:e.querySelector(".rl-hsn").value.trim(),qty:Number(e.querySelector(".rl-qty").value),unit:e.querySelector(".rl-unit").value,rate:Number(e.querySelector(".rl-rate").value),discount:Number(e.querySelector(".rl-disc").value)||0}))}
+function rkBillCalc(){const lines=rkBillGetLines();const taxable=lines.reduce((a,x)=>a+Math.max(0,x.qty*x.rate-x.discount),0),gst=taxable*Math.max(0,Number(document.getElementById("rkGstRate").value)||0)/100;const f=n=>"₹"+n.toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2});const e=document.getElementById("rkBillTotals");if(e)e.innerHTML="Taxable value: <b>"+f(taxable)+"</b><br>GST: <b>"+f(gst)+"</b><br>Invoice total: <b>"+f(taxable+gst)+"</b>";return {taxable,gst,total:taxable+gst}}
+async function rkBillFinalize(){try{rkBillingMsg("");const sellerId=document.getElementById("rkSellerSelect").value,lines=rkBillGetLines();const body={sellerId,invoiceDate:document.getElementById("rkInvoiceDate").value,customerName:document.getElementById("rkCustomer").value.trim(),phone:document.getElementById("rkPhone").value.trim(),email:document.getElementById("rkEmail").value.trim(),address:document.getElementById("rkAddress").value.trim(),shipTo:document.getElementById("rkShipTo").value.trim(),gstin:document.getElementById("rkGstin").value.trim().toUpperCase(),placeOfSupply:document.getElementById("rkSupply").value.trim(),lines,gstRate:Number(document.getElementById("rkGstRate").value)||0,paymentMode:document.getElementById("rkPayMode").value,paymentRef:document.getElementById("rkPayRef").value.trim(),deliveryResponsibility:document.getElementById("rkDelivery").value,transporter:document.getElementById("rkTransporter").value.trim(),source:"manual"};if(!sellerId)throw new Error("Choose or create a seller profile first.");if(!body.customerName)throw new Error("Customer name is required.");if(!lines.length||lines.some(x=>!x.name||!(x.qty>0)||!(x.rate>=0)))throw new Error("Enter a product name, positive quantity and valid rate for every line.");if(!confirm("Confirm details and create the invoice? Please verify GST and all customer/payment details."))return;const d=await rkBillApi("/api/automation/finalize",{method:"POST",body:JSON.stringify(body)});rkBillingMsg("Invoice "+d.invoice.invoiceNo+" created. Open it to print/save as PDF.",false);window.open(d.invoiceUrl,"_blank","noopener");await rkBillingHistory()}catch(e){rkBillingMsg(e.message)}}
+async function rkRunOCR(){const f=document.getElementById("rkOcrFile").files[0],out=document.getElementById("rkOcrReview");out.textContent="";if(!f){out.textContent="Choose a screenshot first.";return}if(f.size>1200000){out.textContent="Image must be 1.2 MB or smaller.";return}try{out.textContent="Extracting…";const image=await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(f)});const d=await rkBillApi("/api/automation/ocr",{method:"POST",body:JSON.stringify({image})});const x=d.data||{};document.getElementById("rkCustomer").value=x.customerName||"";document.getElementById("rkPhone").value=x.phone||"";document.getElementById("rkEmail").value=x.email||"";document.getElementById("rkAddress").value=x.address||"";document.getElementById("rkGstin").value=x.gstin||"";document.getElementById("rkSupply").value=x.placeOfSupply||"";document.getElementById("rkPayMode").value=["NEFT","UPI","IMPS","RTGS","Cash","Card","Credit"].includes(x.paymentMode)?x.paymentMode:"";document.getElementById("rkPayRef").value=x.paymentRef||"";document.getElementById("rkDelivery").value=x.deliveryResponsibility||"Seller";document.getElementById("rkTransporter").value=x.transporter||"";document.getElementById("rkGstRate").value=x.gstRate??5;document.getElementById("rkBillLines").innerHTML="";(x.lines||[]).forEach(l=>rkBillAddLine(l));if(!x.lines||!x.lines.length)rkBillAddLine();rkBillCalc();rkBillingView("manual",document.querySelectorAll("#admin-billing .adminTabs button")[0]);out.textContent="OCR draft loaded into Manual Order. Review every field and correct errors before creating an invoice. Warnings: "+JSON.stringify(x.warnings||[])}catch(e){out.textContent=e.message}}
+async function rkBillingHistory(){const e=document.getElementById("rkInvoiceList");if(!e)return;e.textContent="Loading…";try{const d=await rkBillApi("/api/automation/invoices");e.innerHTML=(d.invoices||[]).length?'<table style="width:100%;font-size:12px"><thead><tr><th>Invoice</th><th>Customer</th><th>Total</th><th>Date</th><th>Open</th></tr></thead><tbody>'+(d.invoices||[]).map(x=>'<tr><td>'+escapeHtml(x.invoiceNo||"")+'</td><td>'+escapeHtml(x.customerName||"")+'</td><td>₹'+Number(x.total||0).toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2})+'</td><td>'+new Date(x.createdAt).toLocaleDateString("en-IN")+'</td><td><a target="_blank" rel="noopener" href="/api/automation/invoice/'+encodeURIComponent(x.id)+'">View / PDF</a></td></tr>').join("")+'</tbody></table>':"No invoices created yet."}catch(err){e.textContent=err.message}}
+
 function adminLogout(){fetch("/api/logout",{method:"POST"}).catch(()=>{});sessionStorage.removeItem("rkAdmin");document.getElementById("adminPanel").style.display="none";document.getElementById("adminLogin").style.display="block";document.getElementById("aPass").value="";closeModal("adminModal")}
 function adminTab(name,btn){document.querySelectorAll(".adminSection").forEach(x=>x.classList.remove("active"));document.getElementById("admin-"+name).classList.add("active");document.querySelectorAll(".adminTabs button").forEach(x=>x.classList.remove("active"));btn.classList.add("active")}
 function toggleMenu(){
