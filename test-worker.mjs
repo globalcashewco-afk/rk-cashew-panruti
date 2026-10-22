@@ -1,10 +1,11 @@
 // Run: node test-worker.mjs [path-to-worker.js]   (no network, no Cloudflare needed)
 import {createHmac} from "node:crypto";
 import {pathToFileURL} from "node:url";
-import fs from "node:fs";
-const src=process.argv[2]||"./worker.js";
-fs.copyFileSync(src,"/tmp/_w.mjs");
-const W=(await import(pathToFileURL("/tmp/_w.mjs").href+"?"+Date.now())).default;
+import path from "node:path";
+import {fileURLToPath} from "node:url";
+const here=path.dirname(fileURLToPath(import.meta.url));
+const src=path.resolve(here,process.argv[2]||"./worker.js");
+const W=(await import(pathToFileURL(src).href+"?"+Date.now())).default;
 let pass=0,fail=0;const ok=(c,m)=>{c?pass++:fail++;console.log((c?"PASS ":"FAIL ")+m)};
 class KV{constructor(){this.m=new Map()}async get(k){return this.m.has(k)?this.m.get(k):null}async put(k,v){this.m.set(k,String(v))}
  async list({prefix="",limit=1000}={}){return{keys:[...this.m.keys()].filter(k=>k.startsWith(prefix)).sort().slice(0,limit).map(name=>({name}))}}}
