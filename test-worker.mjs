@@ -7,7 +7,7 @@ const here=path.dirname(fileURLToPath(import.meta.url));
 const src=path.resolve(here,process.argv[2]||"./worker.js");
 const W=(await import(pathToFileURL(src).href+"?"+Date.now())).default;
 let pass=0,fail=0;const ok=(c,m)=>{c?pass++:fail++;console.log((c?"PASS ":"FAIL ")+m)};
-class KV{constructor(){this.m=new Map()}async get(k,type){if(!this.m.has(k))return null;const v=this.m.get(k);if(type==="json"){try{return JSON.parse(v)}catch(e){return null}}return v}async put(k,v){this.m.set(k,String(v))}
+class KV{constructor(){this.m=new Map()}async get(k,type){if(!this.m.has(k))return null;const v=this.m.get(k);if(type==="json"){try{return JSON.parse(v)}catch(e){return null}}return v}async put(k,v){this.m.set(k,String(v))}async delete(k){this.m.delete(k)}
  async list({prefix="",limit=1000}={}){return{keys:[...this.m.keys()].filter(k=>k.startsWith(prefix)).sort().slice(0,limit).map(name=>({name}))}}}
 const env={KV:new KV(),ADMIN_USER:"admin",ADMIN_PASS:"pw123",SESSION_SECRET:"sess",RZP_KEY_ID:"rzp_test_x",RZP_KEY_SECRET:"secret1",RZP_WEBHOOK_SECRET:"whsec",
  ADMIN_TOTP:"GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ"};
