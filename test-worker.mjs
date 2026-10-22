@@ -74,7 +74,7 @@ r=await call("GET","/api/track?id=RK-T-0001&phone=9876543210");ok(r.s===200&&r.j
 r=await call("GET","/api/track?id=RK-T-0001&phone=9000000000");ok(r.s===404,"Track blocks wrong phone");
 // --- screenshot
 const img="data:image/jpeg;base64,/9j/4AAQSkZJRg==";
-r=await call("POST","/api/shot?id=RK-T-0002",{img});ok(r.s===200,"Screenshot upload");
+r=await call("POST","/api/shot?id=RK-T-0002&phone=9876543210",{img});ok(r.s===200,"Screenshot upload with order phone verification");
 r=await call("GET","/api/shot?id=RK-T-0002",null,{cookie});ok(r.j.img===img,"Admin can open screenshot");
 r=await call("GET","/api/shot?id=RK-T-0002");ok(r.s===401,"Screenshot private");
 r=await call("POST","/api/shot?id=RK-T-0002",{img:"data:text/html;base64,AAAA"});ok(r.s!==200,"Non-image upload refused");
