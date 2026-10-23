@@ -99,6 +99,14 @@ await call("POST","/api/order",mk("RK-R-0003"));r=await call("POST","/api/pay/cr
 const ev3=JSON.stringify({event:"payment.captured",payload:{payment:{entity:{id:"pay_4",order_id:r.j.rzpOrder,amount:100,notes:{}}}}});
 await call("POST","/api/pay/webhook",null,{raw:ev3,headers:{"x-razorpay-signature":createHmac("sha256","whsec").update(ev3).digest("hex")}});
 o=(await call("GET","/api/orders",null,{cookie})).j.orders.find(x=>x.id==="RK-R-0003");ok(o.status!=="Paid","Webhook with wrong amount does NOT mark Paid");
+// order.paid uses payload.order.entity (not payload.payment.entity)
+await call("POST","/api/order",mk("RK-R-0005"));
+r=await call("POST","/api/pay/create",{id:"RK-R-0005"});
+const rz5=r.j.rzpOrder;
+const evPaid=JSON.stringify({event:"order.paid",payload:{order:{entity:{id:rz5,amount:101500,amount_paid:101500}}}});
+r=await call("POST","/api/pay/webhook",null,{raw:evPaid,headers:{"x-razorpay-signature":createHmac("sha256","whsec").update(evPaid).digest("hex")}});
+o=(await call("GET","/api/orders",null,{cookie})).j.orders.find(x=>x.id==="RK-R-0005");
+ok(r.s===200&&o.status==="Paid","order.paid webhook reads order.entity and marks only fully paid orders");
 // unknown-price orders cannot pay online
 env.KV.m.delete("prices");await call("POST","/api/order",mk("RK-R-0004",{total:1}));r=await call("POST","/api/pay/create",{id:"RK-R-0004"});ok(r.s!==200,"Online payment refused when server has no price list (tampered total)");
 await call("PUT","/api/prices",{prices:{W320:900,SP:700}},{cookie});
