@@ -177,6 +177,18 @@ summary{cursor:pointer;font-weight:800}details p{color:var(--muted);font-size:13
 .adminSection{display:none}.adminSection.active{display:block}
 .adminGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
 .adminProduct{border:1px solid var(--line);border-radius:14px;padding:12px}.adminProduct h4{margin:0 0 8px}
+/* High-contrast invoice builder and seller profile */
+#admin-billing .adminProduct{background:#fff!important;color:#172033!important;border-color:#cbd5e1!important;box-shadow:0 4px 14px rgba(15,23,42,.06)}
+#admin-billing .adminProduct h4,#admin-billing .adminProduct label{color:#14284a!important}
+#admin-billing .adminProduct p{color:#475569!important}
+#admin-billing .adminProduct input,#admin-billing .adminProduct textarea,#admin-billing .adminProduct select{background:#fff!important;color:#111827!important;border:1px solid #94a3b8!important;box-shadow:inset 0 1px 2px rgba(15,23,42,.04)}
+#admin-billing .adminProduct input::placeholder,#admin-billing .adminProduct textarea::placeholder{color:#64748b!important;opacity:1}
+#rkBill-seller{background:#f8fafc!important;border:2px solid #cbd5e1!important}
+#rkSellerList,#rkInvoiceList{color:#172033;background:#fff}
+#rkSellerList table,#rkInvoiceList table{width:100%;border-collapse:collapse;color:#172033;background:#fff}
+#rkSellerList th,#rkInvoiceList th{background:#17365f!important;color:#fff!important;padding:9px;text-align:left}
+#rkSellerList td,#rkInvoiceList td{background:#fff;color:#172033;border:1px solid #cbd5e1;padding:8px}
+#rkSellerList tr:nth-child(even) td,#rkInvoiceList tr:nth-child(even) td{background:#f1f5f9;color:#172033}
 .toast{position:fixed;right:18px;bottom:90px;background:#071126;color:#fff;border:1px solid rgba(229,191,101,.35);padding:12px 15px;border-radius:13px;z-index:100;transform:translateY(20px);opacity:0;pointer-events:none;transition:.25s}.toast.show{transform:translateY(0);opacity:1}
 .reveal{opacity:0;transform:translateY(20px);transition:.65s ease}.reveal.visible{opacity:1;transform:none}
 @media(max-width:950px){
@@ -930,6 +942,6 @@ if(new URLSearchParams(location.search).get("admin")==="1"){setTimeout(function(
 </style>
 
 <p style="text-align:center;margin:12px"><a href="cashew-gst-prices/">View cashew prices with 5% GST</a></p>
-<script src="shop.js?v=10" defer></script>
+<script src="shop.js?v=11" defer></script>
 </body>
 </html>
