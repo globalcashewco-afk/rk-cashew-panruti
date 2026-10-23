@@ -81,9 +81,20 @@ export default {
       if(p==="/api/pay/webhook"&&req.method==="POST"){
         if(!env.RZP_WEBHOOK_SECRET)return J({error:"Not configured"},503);
         const raw=await req.text();if(!await same(req.headers.get("x-razorpay-signature")||"",await hmacHex(env.RZP_WEBHOOK_SECRET,raw)))return J({error:"Bad signature"},400);
-        const ev=JSON.parse(raw),pe=ev&&ev.payload&&ev.payload.payment&&ev.payload.payment.entity;
-        if((ev.event==="payment.captured"||ev.event==="order.paid")&&pe&&pe.order_id){const oid=await env.KV.get("rzp:"+pe.order_id);const [k,o]=oid?await getOrder(env,oid):[null,null];
-          if(o&&o.rzpOrder===pe.order_id&&pe.amount===Math.round(o.total*100)&&o.status!=="Paid"){await markPaid(env,k,o,clean(pe.id,40));notify(env,ctx,o,"PAID online: order "+o.id+" - "+o.name+" - Rs "+o.total)}}
+        const ev=JSON.parse(raw);
+        const payment=ev&&ev.payload&&ev.payload.payment&&ev.payload.payment.entity;
+        const razorOrder=ev&&ev.payload&&ev.payload.order&&ev.payload.order.entity;
+        // payment.captured carries payment.entity; order.paid carries order.entity.
+        const orderId=payment&&payment.order_id || (ev.event==="order.paid"&&razorOrder&&razorOrder.id);
+        const paidAmount=payment&&payment.amount!=null?payment.amount:(razorOrder&&razorOrder.amount_paid);
+        const paymentId=payment&&payment.id || (razorOrder&&razorOrder.id);
+        if((ev.event==="payment.captured"||ev.event==="order.paid")&&orderId&&paidAmount!=null){
+          const oid=await env.KV.get("rzp:"+orderId);const [k,o]=oid?await getOrder(env,oid):[null,null];
+          if(o&&o.rzpOrder===orderId&&Number(paidAmount)===Math.round(o.total*100)&&o.status!=="Paid"){
+            await markPaid(env,k,o,clean(paymentId,40));
+            notify(env,ctx,o,"PAID online: order "+o.id+" - "+o.name+" - Rs "+o.total);
+          }
+        }
         return J({ok:1});
       }
       if(p==="/api/pin"&&req.method==="GET"){
