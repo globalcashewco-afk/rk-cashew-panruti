@@ -142,17 +142,11 @@ function orderId(){var d=new Date();return"RK"+d.toISOString().slice(2,10).repla
 window.rkPay=function(){
   var c=calc(),name=v("oName"),ph=v("oPhone").replace(/\D/g,""),pin=v("oPin"),ad=v("oAddress");
   if(!c.lines.length)return toast("Add a product first");
-  
   if(!name||ph.length<10||!c.dOK||ad.length<8)return toast("Please enter name, 10-digit phone, 6-digit pincode and full address");
   order={id:orderId(),c:c,name:name,phone:ph,pin:pin,addr:ad,time:new Date()};
-  var upi="upi://pay?pa="+CFG.upi+"&pn="+encodeURIComponent(CFG.upiName)+"&am="+c.total.toFixed(2)+"&cu=INR&tn="+order.id;
   var m=document.querySelector("#cartModal .modalCard");
-  m.innerHTML='<div class="modalHead"><div><div class="kicker">'+order.id+'</div><h2 style="margin:0">UPI</h2></div><button class="close" onclick="closeModal(\'cartModal\')">×</button></div><div class="pay"><div class="amt">'+inr(c.total)+'</div><div id="qrBox"><img src="images/upi-qr.webp" alt="UPI QR"></div><p class="dlv">Scan with any UPI app · '+CFG.upi+'</p><div class="row"><button class="btn gold" type="button" onclick="rkUpiPick()">GPay / PhonePe / Paytm</button></div><div class="payhelp" style="text-align:left"><b>How to pay</b><br>1. Pay the amount shown using any UPI app.<br>2. Copy the 12-digit UTR (UPI Ref No) from your payment receipt.<br>3. Upload the screenshot, enter the UTR and tap the green button.</div>'+
-  '<input id="oUtr" placeholder="UPI Ref / UTR (12 digits)" inputmode="numeric" maxlength="12"><div class="dlv">Find your 12-digit UTR under "UPI Ref No" or "UTR" in your GPay / PhonePe / Paytm receipt.</div><button class="btn wa" style="margin-top:10px;width:100%" onclick="rkSend(true)">'+t("I have paid – send order on WhatsApp")+'</button><button class="btn" type="button" style="margin-top:8px;width:100%" onclick="rkSend(false)">Not paid yet? Send order – I will pay later</button><p class="dlv">We will call you to confirm your order and payment.</p>'+
-  '<div class="payhelp">'+t("Payment problem? Call / WhatsApp us")+'<div class="row"><a class="btn" href="tel:'+CFG.phone+'">📞 9791880911</a><a class="btn wa" href="https://wa.me/'+CFG.wa+'?text='+encodeURIComponent("Payment problem for order "+order.id+" ("+inr(c.total)+"). Please help.")+'" target="_blank" rel="noopener">WhatsApp</a></div></div></div>';
-  if(window.QRCode)qr(upi);else{var sc=document.createElement("script");sc.src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js";sc.onload=function(){qr(upi)};document.head.appendChild(sc)}
+  m.innerHTML='<div class="modalHead"><div><div class="kicker">'+order.id+'</div><h2 style="margin:0">Secure checkout</h2></div><button class="close" onclick="closeModal(\\'cartModal\\')">×</button></div><div class="pay"><div class="amt">'+inr(c.total)+'</div><p class="dlv">Continue to Razorpay to pay securely by UPI, card or net banking. The old static UPI QR has been removed.</p><div class="payhelp">Your order is confirmed as paid only after Razorpay verifies the payment.</div><div class="payhelp">'+t("Payment problem? Call / WhatsApp us")+'<div class="row"><a class="btn" href="tel:'+CFG.phone+'">📞 9791880911</a><a class="btn wa" href="https://wa.me/'+CFG.wa+'?text='+encodeURIComponent("Payment problem for order "+order.id+" ("+inr(c.total)+"). Please help.")+'" target="_blank" rel="noopener">WhatsApp</a></div></div></div>';
 };
-function qr(u){try{var b=document.getElementById("qrBox");if(!b)return;var h=document.createElement("div");new QRCode(h,{text:u,width:210,height:210,correctLevel:QRCode.CorrectLevel.M});b.innerHTML="";b.appendChild(h)}catch(e){}}
 function v(id){var e=document.getElementById(id);return e?e.value.trim():""}
 /* ---------- Professional order slip (PNG) + WhatsApp ---------- */
 function slip(o,paid,utr){
@@ -176,15 +170,15 @@ function upShot(id,f){if(!f||!/^image\//.test(f.type))return;var r=new FileReade
 fetch("/api/settings").then(function(r){return r.json()}).then(function(S){FREE=+S.freeAbove||0}).catch(function(){});
 window.rkGW=null;fetch("/api/config").then(function(r){return r.json()}).then(function(d){window.rkGW=d}).catch(function(){});
 window.rkGateway=function(){
-  var G=window.rkGW;if(!order||!G||!G.rzp)return;var c=order.c,P=function(u,b){return fetch(u,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(b)})};
+  var G=window.rkGW;if(!order)return;if(!G||!G.rzp){toast("Razorpay is temporarily unavailable. Please try again shortly.");return}var c=order.c,P=function(u,b){return fetch(u,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(b)})};
   var pl={id:order.id,name:order.name,phone:order.phone,pin:order.pin,addr:order.addr,lines:c.lines.map(function(l){return{id:l.id,q:l.q,price:l.price,amt:l.amt}}),sub:c.sub,gst:c.gst,dlv:c.dlv,total:c.total,paid:false,consent:true,coupon:CP?CP.code:"",lang:lang};
   P("/api/order",pl).then(function(r){if(!r.ok&&r.status!==409)throw 0;return P("/api/pay/create",{id:order.id})}).then(function(r){return r.json()}).then(function(d){
     if(!d.rzpOrder)return toast(d.error||"Payment could not start");
     var run=function(){new Razorpay({key:G.key,amount:d.amount,currency:"INR",name:"RK Cashew Panruti",description:"Order "+order.id,order_id:d.rzpOrder,prefill:{name:order.name,contact:order.phone},theme:{color:"#e8a317"},
       handler:function(x){P("/api/pay/verify",{id:order.id,razorpay_order_id:x.razorpay_order_id,razorpay_payment_id:x.razorpay_payment_id,razorpay_signature:x.razorpay_signature}).then(function(r){return r.json()}).then(function(v){done(!!v.ok)}).catch(function(){done(false)})},
       modal:{ondismiss:function(){toast("Payment cancelled")}}}).open()};
-    if(window.Razorpay)run();else{var sc=document.createElement("script");sc.src="https://checkout.razorpay.com/v1/checkout.js";sc.onload=run;sc.onerror=function(){toast("Payment page blocked – use the UPI QR")};document.head.appendChild(sc)}
-  }).catch(function(){toast("Payment could not start – please use the UPI QR")});
+    if(window.Razorpay)run();else{var sc=document.createElement("script");sc.src="https://checkout.razorpay.com/v1/checkout.js";sc.onload=run;sc.onerror=function(){toast("Razorpay could not open. Please try again or contact us.")};document.head.appendChild(sc)}
+  }).catch(function(){toast("Payment could not start. Please try again or contact us.")});
   function done(ok){
     var m=document.querySelector("#cartModal .modalCard"),wa="https://wa.me/"+CFG.wa+"?text="+encodeURIComponent("Order "+order.id+" paid online "+inr(c.total)+". Name: "+order.name+", "+order.phone);
     m.innerHTML='<div class="modalHead"><h2 style="margin:0">'+(ok?"Payment received ✔":"Payment being confirmed")+'</h2><button class="close" onclick="closeModal(\'cartModal\')">×</button></div><div class="pay"><p>Order <b>'+order.id+'</b> · '+inr(c.total)+'</p><p>'+(ok?"Thank you! We will pack and ship your order.":"If money was deducted, it is confirmed automatically within a few minutes.")+'</p><a class="btn wa" href="'+wa+'" target="_blank" rel="noopener">Send order on WhatsApp</a> <a class="btn" href="/track-order/">Track order</a></div>';
@@ -354,7 +348,7 @@ window.rkLoadOrders=function(){load();clearInterval(timer);timer=setInterval(fun
 (function(){
 "use strict";
 var _pay=window.rkPay;
-function shotUI(){var pp=document.querySelector("#cartModal .pay");if(pp&&window.rkGW&&window.rkGW.rzp&&!document.getElementById("oGw"))pp.insertAdjacentHTML("afterbegin",'<button class="btn gold" id="oGw" style="width:100%;margin-bottom:8px" onclick="rkGateway()">Pay securely – UPI / Card / NetBanking</button><p style="text-align:center;font-size:12px;margin:4px 0 10px">or pay by UPI QR below and enter the UTR</p>');var u=document.getElementById("oUtr");if(u&&!document.getElementById("oShot"))u.insertAdjacentHTML("beforebegin",'<label style="display:block;font-size:13px;margin-top:8px">Payment screenshot (required)<input type="file" id="oShot" accept="image/*"></label>');if(window.rkTranslate)window.rkTranslate(document.getElementById("cartModal"))}
+function shotUI(){var pp=document.querySelector("#cartModal .pay");if(pp&&!document.getElementById("oGw"))pp.insertAdjacentHTML("afterbegin",'<button class="btn gold" id="oGw" style="width:100%;margin-bottom:8px" onclick="rkGateway()">Pay securely with Razorpay</button>');if(window.rkTranslate)window.rkTranslate(document.getElementById("cartModal"))}
 window.rkPay=function(){
   var g=function(i){var e=document.getElementById(i);return e?e.value.trim():""};
   var name=g("oName"),ph=g("oPhone").replace(/\D/g,""),pin=g("oPin");
