@@ -145,7 +145,7 @@ window.rkPay=function(){
   if(!name||ph.length<10||!c.dOK||ad.length<8)return toast("Please enter name, 10-digit phone, 6-digit pincode and full address");
   order={id:orderId(),c:c,name:name,phone:ph,pin:pin,addr:ad,time:new Date()};
   var m=document.querySelector("#cartModal .modalCard");
-  m.innerHTML='<div class="modalHead"><div><div class="kicker">'+order.id+'</div><h2 style="margin:0">Secure checkout</h2></div><button class="close" onclick="closeModal(\\'cartModal\\')">×</button></div><div class="pay"><div class="amt">'+inr(c.total)+'</div><p class="dlv">Continue to Razorpay to pay securely by UPI, card or net banking. The old static UPI QR has been removed.</p><div class="payhelp">Your order is confirmed as paid only after Razorpay verifies the payment.</div><div class="payhelp">'+t("Payment problem? Call / WhatsApp us")+'<div class="row"><a class="btn" href="tel:'+CFG.phone+'">📞 9791880911</a><a class="btn wa" href="https://wa.me/'+CFG.wa+'?text='+encodeURIComponent("Payment problem for order "+order.id+" ("+inr(c.total)+"). Please help.")+'" target="_blank" rel="noopener">WhatsApp</a></div></div></div>';
+  m.innerHTML='<div class="modalHead"><div><div class="kicker">'+order.id+'</div><h2 style="margin:0">Secure checkout</h2></div><button class="close" onclick="closeModal(\'cartModal\')">×</button></div><div class="pay"><div class="amt">'+inr(c.total)+'</div><p class="dlv">Continue to Razorpay to pay securely by UPI, card or net banking. Complete payment securely through Razorpay.</p><div class="payhelp">Your order is confirmed as paid only after Razorpay verifies the payment.</div><div class="payhelp">'+t("Payment problem? Call / WhatsApp us")+'<div class="row"><a class="btn" href="tel:'+CFG.phone+'">📞 9791880911</a><a class="btn wa" href="https://wa.me/'+CFG.wa+'?text='+encodeURIComponent("Payment problem for order "+order.id+" ("+inr(c.total)+"). Please help.")+'" target="_blank" rel="noopener">WhatsApp</a></div></div></div>';
 };
 function v(id){var e=document.getElementById(id);return e?e.value.trim():""}
 /* ---------- Professional order slip (PNG) + WhatsApp ---------- */
@@ -187,15 +187,8 @@ window.rkGateway=function(){
 };
 function rkModal(inner){var o=document.getElementById("rkPop");if(o)o.remove();o=document.createElement("div");o.id="rkPop";o.style.cssText="position:fixed;inset:0;z-index:160;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:16px";o.innerHTML='<div style="position:relative;background:#fff;color:#111;max-width:400px;width:100%;border-radius:20px;padding:22px 18px;text-align:center"><button type="button" aria-label="Close" style="position:absolute;top:6px;right:12px;background:none;border:0;font-size:26px;cursor:pointer" onclick="document.getElementById(\'rkPop\').remove()">×</button>'+inner+'</div>';o.addEventListener("click",function(e){if(e.target===o)o.remove()});document.body.appendChild(o);translate(o)}
 function noGrade(){rkModal('<div style="font-size:42px">🥜</div><p style="font-size:16px;margin:8px 0 14px">Select at least one grade to view your order.</p><button class="btn gold" type="button" style="width:100%" onclick="document.getElementById(\'rkPop\').remove();var g=document.getElementById(\'grades\');if(g)g.scrollIntoView({behavior:\'smooth\'})">Choose grade</button>')}
-window.rkUpiPick=function(){
-  if(!order)return;
-  var q="pa="+encodeURIComponent(CFG.upi)+"&pn="+encodeURIComponent(CFG.upiName)+"&am="+order.c.total.toFixed(2)+"&cu=INR&tn="+encodeURIComponent(order.id);
-  var an=/Android/i.test(navigator.userAgent);
-  var L=function(pkg,ios){return an?"intent://pay?"+q+"#Intent;scheme=upi;package="+pkg+";end":ios+q};
-  var b=function(label,href){return'<a class="btn" style="display:block;margin:6px 0" href="'+href+'">'+label+'</a>'};
-  rkModal('<h3 style="margin:0 0 10px">Choose your UPI app</h3>'+b("Google Pay",L("com.google.android.apps.nbu.paisa.user","tez://upi/pay?"))+b("PhonePe",L("com.phonepe.app","phonepe://pay?"))+b("Paytm",L("net.one97.paytm","paytmmp://pay?"))+b("BHIM / Other UPI app","upi://pay?"+q)+'<p class="dlv">If the app does not open, scan the QR code with any UPI app or copy the UPI ID.</p><button class="btn" type="button" style="width:100%" onclick="rkCopyUpi()">Copy UPI ID</button>');
-};
-window.rkCopyUpi=function(){var u=CFG.upi,done=function(){toast(t("UPI ID copied"))};if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(u).then(done,done);else{var i=document.createElement("input");i.value=u;document.body.appendChild(i);i.select();try{document.execCommand("copy")}catch(e){}i.remove();done()}};
+window.rkUpiPick=function(){toast("Please use secure Razorpay checkout.")};
+window.rkCopyUpi=function(){toast("Please use secure Razorpay checkout.")};
 window.rkSend=function(paid){
   if(!order)return;var utr=v("oUtr");
   if(paid){var u12=utr.replace(/\s/g,"");if(!/^\d{12}$/.test(u12)||/^(\d)\1{11}$/.test(u12)||"01234567890123456789".includes(u12)||"98765432109876543210".includes(u12))return toast(t("Enter the valid 12-digit UTR (UPI Ref No)"));var sf=document.getElementById("oShot"),fz=sf&&sf.files&&sf.files[0];if(!fz)return toast(t("Please upload your payment screenshot"));if(!/^image\/(jpeg|png)$/.test(fz.type)||fz.size<10240||fz.size>5242880)return toast(t("Screenshot must be JPG or PNG, 10 KB to 5 MB"))}
