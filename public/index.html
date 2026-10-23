@@ -691,8 +691,12 @@ const FESTIVALS_2026=[
  ["Christmas","2026-12-25"]
 ];
 let data=JSON.parse(localStorage.getItem("rkCashewData")||"null")||structuredClone(DEFAULTS);
-const CART_KEY="rkCashewCartV2";
-let cart=JSON.parse(localStorage.getItem(CART_KEY)||"{}");
+// Cart is private to this browser tab/session, not permanently saved on a shared device.
+ const CART_KEY="rkCashewCartV2";
+ let cart={};
+ try{cart=JSON.parse(sessionStorage.getItem(CART_KEY)||"{}")||{}}catch(e){cart={}}
+ // Remove the legacy persistent cart so old test items cannot reappear for another visitor.
+ try{localStorage.removeItem(CART_KEY);localStorage.removeItem("rkCashewCart")}catch(e){}
 
 function money(n){return "₹"+Number(n).toLocaleString("en-IN")}
 function save(){localStorage.setItem("rkCashewData",JSON.stringify(data));if(sessionStorage.getItem("rkAdmin")==="1"){const pr={},sk={};data.products.forEach(p=>{pr[p.id]=p.price;sk[p.id]=!!p.stock});fetch("/api/prices",{method:"PUT",headers:{"content-type":"application/json"},body:JSON.stringify({prices:pr,stock:sk})}).catch(()=>{})}}
@@ -720,12 +724,12 @@ function changeQty(id,delta){
  const now=Number(cart[id]||0)+delta;
  cart[id]=Math.max(0,Math.round(now*10)/10);
  if(cart[id]===0)delete cart[id];
- localStorage.setItem(CART_KEY,JSON.stringify(cart));
+ sessionStorage.setItem(CART_KEY,JSON.stringify(cart));
  const el=document.getElementById("q-"+id);if(el)el.textContent=(cart[id]||0)+" kg";
  updateCartUI();
 }
 function addProduct(id){var p=data.products.find(function(x){return x.id===id});if(!p||!p.stock)return toast(id+" is unavailable");changeQty(id,0.5);toast(id+" added to order")}
-function clearOrder(){cart={};localStorage.setItem(CART_KEY,"{}");renderProducts();toast("Order cleared")}
+function clearOrder(){cart={};sessionStorage.setItem(CART_KEY,"{}");renderProducts();toast("Order cleared")}
 function gstAmount(subtotal){return Math.round(subtotal*0.05*100)/100}
 function updateCartUI(){
  let subtotal=0,count=0;
@@ -942,6 +946,6 @@ if(new URLSearchParams(location.search).get("admin")==="1"){setTimeout(function(
 </style>
 
 <p style="text-align:center;margin:12px"><a href="cashew-gst-prices/">View cashew prices with 5% GST</a></p>
-<script src="shop.js?v=11" defer></script>
+<script src="shop.js?v=12" defer></script>
 </body>
 </html>
