@@ -2,7 +2,8 @@
 const AJ=(o,s=200,h={})=>new Response(JSON.stringify(o),{status:s,headers:{"content-type":"application/json","cache-control":"no-store",...h}});
 const cleanA=(v,n=300)=>String(v??"").replace(/[\u0000-\u001f<>]/g," ").trim().slice(0,n);
 function kvA(env){return env.KV&&typeof env.KV.get==="function"?env.KV:null}
-async function adminA(req,env,ctx,base){try{const u=new URL(req.url);u.pathname="/api/orders";u.search="";const r=await base.fetch(new Request(u.toString(),{method:"GET",headers:req.headers}),env,ctx);return r.status===200}catch(e){return false}}
+async function sessionSignatureA(value,secret){const key=await crypto.subtle.importKey("raw",new TextEncoder().encode(secret),{name:"HMAC",hash:"SHA-256"},false,["sign"]);const sig=new Uint8Array(await crypto.subtle.sign("HMAC",key,new TextEncoder().encode(String(value))));return btoa(String.fromCharCode(...sig)).replace(/\\+/g,"-").replace(/\\//g,"_").replace(/=+$/g,"")}
+async function adminA(req,env){try{if(!env.SESSION_SECRET)return false;const m=(req.headers.get("cookie")||"").match(/(?:^|;\\s*)rkS=(\\d+)\\.([\\w-]+)/);if(!m||!/^\\d+$/.test(m[1])||Number(m[1])<Date.now())return false;const expected=await sessionSignatureA(m[1],env.SESSION_SECRET);if(expected.length!==m[2].length)return false;let diff=0;for(let i=0;i<expected.length;i++)diff|=expected.charCodeAt(i)^m[2].charCodeAt(i);return diff===0}catch(e){return false}}
 function uid(){return "RK"+Date.now().toString(36).toUpperCase()+Math.random().toString(36).slice(2,7).toUpperCase()}
 function gstValid(g){return /^\d{2}[A-Z]{5}\d{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/.test(String(g||""))}
 function num(v){const n=Number(v);return Number.isFinite(n)?n:0}
