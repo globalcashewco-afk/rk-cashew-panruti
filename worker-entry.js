@@ -84,6 +84,6 @@ export default {
       return new Response(JSON.stringify({error:"Internal server error"}), {status:500, headers:{"content-type":"application/json","cache-control":"no-store"}});
     }
     const r = await wrapped.fetch(req, env, ctx);
-    return styleHtmlResponse(r);
+    return styleHtmlResponse(r, req);
   }
 };
