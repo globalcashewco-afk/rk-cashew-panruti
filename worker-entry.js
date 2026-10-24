@@ -1,6 +1,7 @@
 /* RK Cashew final entry: production wrapper + OCR/manual automation */
 import wrapped from "./worker-wrapped.js";
 import { automation } from "./worker-automation.js";
+import { ewaybill } from "./worker-ewaybill.js";
 
 const ROYAL_CSS = `
 /* ===== RK CASHEW ROYAL ADMIN + INVOICE UI ===== */
@@ -56,22 +57,33 @@ body:has(.inv){background:radial-gradient(circle at 15% 0,#182e63 0,transparent 
 @media print{body:has(.inv){background:#fff!important;padding:0!important}.inv{box-shadow:none!important;border-radius:0!important}.print{display:none!important}.inv .head{print-color-adjust:exact;-webkit-print-color-adjust:exact}.inv th{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
 `;
 
-function styleHtmlResponse(resp){
+function styleHtmlResponse(resp, req){
   const ct=resp.headers.get("content-type")||"";
   if(!ct.includes("text/html")) return resp;
-  return new HTMLRewriter().on("head",{element(el){el.append(`<style>${ROYAL_CSS}</style>`,{html:true})}}).transform(resp);
+  let rewriter = new HTMLRewriter().on("head",{element(el){el.append(`<style>${ROYAL_CSS}</style>`,{html:true})}});
+  try {
+    const u = new URL(req.url);
+    if (u.pathname === "/" && u.searchParams.get("admin") === "1") {
+      rewriter = rewriter.on("body", { element(el) {
+        el.append('<script src="/ewaybill-admin.js" defer></script>', { html: true });
+      }});
+    }
+  } catch {}
+  return rewriter.transform(resp);
 }
 
 export default {
   ...wrapped,
   async fetch(req, env, ctx) {
     try {
+      const e = await ewaybill(req, env, ctx, wrapped);
+      if (e) return styleHtmlResponse(e, req);
       const r = await automation(req, env, ctx, wrapped);
-      if (r) return styleHtmlResponse(r);
+      if (r) return styleHtmlResponse(r, req);
     } catch (e) {
       return new Response(JSON.stringify({error:"Internal server error"}), {status:500, headers:{"content-type":"application/json","cache-control":"no-store"}});
     }
     const r = await wrapped.fetch(req, env, ctx);
-    return styleHtmlResponse(r);
+    return styleHtmlResponse(r, req);
   }
 };
