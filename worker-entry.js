@@ -1,6 +1,7 @@
 /* RK Cashew final entry: production wrapper + OCR/manual automation */
 import wrapped from "./worker-wrapped.js";
 import { automation } from "./worker-automation.js";
+import { ewaybill } from "./worker-ewaybill.js";
 
 const ROYAL_CSS = `
 /* ===== RK CASHEW ROYAL ADMIN + INVOICE UI ===== */
@@ -66,6 +67,8 @@ export default {
   ...wrapped,
   async fetch(req, env, ctx) {
     try {
+      const e = await ewaybill(req, env, ctx, wrapped);
+      if (e) return styleHtmlResponse(e);
       const r = await automation(req, env, ctx, wrapped);
       if (r) return styleHtmlResponse(r);
     } catch (e) {
